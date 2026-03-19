@@ -9,6 +9,7 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { useSession, useUpdateSession, useDeleteSession, useUpdateSet, useDeleteSet } from "@/hooks/useWorkouts";
 import { SessionDetailSkeleton } from "@/components/ui/Skeleton";
+import { colors, typography, radius, spacing } from "@/lib/theme";
 import type { WorkoutSet } from "@/types/api.types";
 
 export default function SessionDetailScreen() {
@@ -142,6 +143,7 @@ function SessionHeader({
             style={[styles.finishBtn, finishing && styles.btnDisabled]}
             onPress={onFinish}
             disabled={finishing}
+            activeOpacity={0.8}
           >
             <Text style={styles.finishBtnText}>{finishing ? "Guardando..." : "Finalizar sesión"}</Text>
           </TouchableOpacity>
@@ -155,6 +157,7 @@ function SessionHeader({
           style={[styles.deleteBtn, deleting && styles.btnDisabled]}
           onPress={onDelete}
           disabled={deleting}
+          activeOpacity={0.7}
         >
           <Text style={styles.deleteBtnText}>Eliminar</Text>
         </TouchableOpacity>
@@ -199,47 +202,70 @@ function SetRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  content: { padding: 16, paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing[4], paddingBottom: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  emptyText: { color: "#9ca3af", fontSize: 15 },
-  header: { marginBottom: 8, gap: 4 },
-  title: { fontSize: 22, fontWeight: "700", color: "#111827" },
-  date: { fontSize: 13, color: "#6b7280", textTransform: "capitalize" },
-  notes: { fontSize: 14, color: "#374151", fontStyle: "italic", marginTop: 4 },
-  headerActions: { flexDirection: "row", gap: 10, marginTop: 12, alignItems: "center" },
-  finishBtn: { backgroundColor: "#2563eb", borderRadius: 8, paddingHorizontal: 16, paddingVertical: 9 },
-  finishBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  doneBadge: { backgroundColor: "#dcfce7", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9 },
-  doneBadgeText: { color: "#16a34a", fontWeight: "600", fontSize: 14 },
-  deleteBtn: { backgroundColor: "#fff1f2", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9 },
-  deleteBtnText: { color: "#ef4444", fontWeight: "600", fontSize: 14 },
-  btnDisabled: { opacity: 0.55 },
-  exerciseName: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#2563eb",
-    marginTop: 20,
-    marginBottom: 6,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+  emptyText: { color: colors.textMuted, fontSize: typography.md },
+
+  header: { marginBottom: spacing[2], gap: 4 },
+  title: { fontSize: typography["2xl"], fontWeight: typography.bold, color: colors.textPrimary },
+  date: { fontSize: typography.sm, color: colors.textSecondary, textTransform: "capitalize" },
+  notes: { fontSize: typography.sm, color: colors.textSecondary, fontStyle: "italic", marginTop: 4 },
+
+  headerActions: { flexDirection: "row", gap: spacing[2], marginTop: spacing[3], alignItems: "center" },
+  finishBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[5],
+    paddingVertical: spacing[2] + 1,
   },
+  finishBtnText: { color: colors.textInverted, fontWeight: typography.semibold, fontSize: typography.sm },
+  doneBadge: {
+    backgroundColor: colors.successBg,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2] + 1,
+    borderWidth: 1,
+    borderColor: colors.success,
+  },
+  doneBadgeText: { color: colors.success, fontWeight: typography.semibold, fontSize: typography.sm },
+  deleteBtn: {
+    backgroundColor: colors.dangerBg,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2] + 1,
+  },
+  deleteBtnText: { color: colors.danger, fontWeight: typography.semibold, fontSize: typography.sm },
+  btnDisabled: { opacity: 0.55 },
+
+  exerciseName: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    color: colors.primary,
+    marginTop: spacing[5],
+    marginBottom: spacing[2],
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+
   setRow: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing[3],
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
-    gap: 10,
+    gap: spacing[3],
   },
-  setCompleted: { backgroundColor: "#f0fdf4" },
+  setCompleted: { backgroundColor: colors.successBg, borderColor: colors.success },
   setCheck: { width: 28, alignItems: "center" },
-  checkDone: { fontSize: 18, color: "#16a34a", fontWeight: "700" },
-  checkPending: { fontSize: 18, color: "#9ca3af" },
+  checkDone: { fontSize: 18, color: colors.success, fontWeight: typography.bold },
+  checkPending: { fontSize: 18, color: colors.gray4 },
   setBody: { flex: 1 },
-  setNum: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  setDetail: { fontSize: 13, color: "#6b7280", marginTop: 1 },
-  deleteSetText: { color: "#d1d5db", fontSize: 16, fontWeight: "700" },
-  noSets: { textAlign: "center", color: "#9ca3af", marginTop: 24, fontSize: 14 },
+  setNum: { fontSize: typography.sm, fontWeight: typography.semibold, color: colors.textPrimary },
+  setDetail: { fontSize: typography.sm, color: colors.textSecondary, marginTop: 1 },
+  deleteSetText: { color: colors.gray3, fontSize: 16, fontWeight: typography.bold },
+  noSets: { textAlign: "center", color: colors.textMuted, marginTop: 24, fontSize: typography.sm },
 });

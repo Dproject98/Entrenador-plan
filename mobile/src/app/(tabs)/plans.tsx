@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { usePlans, useActivatePlan, useDeletePlan } from "@/hooks/usePlans";
 import { PlanListSkeleton } from "@/components/ui/Skeleton";
+import { colors, typography, radius, spacing } from "@/lib/theme";
 import type { TrainingPlan } from "@/types/api.types";
 
 export default function PlansScreen() {
@@ -52,7 +53,10 @@ export default function PlansScreen() {
         onRefresh={refetch}
         refreshing={isRefetching}
         ListEmptyComponent={
-          <Text style={styles.empty}>No tienes planes de entrenamiento aún.</Text>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>Sin planes aún</Text>
+            <Text style={styles.emptySub}>Crea tu primer plan de entrenamiento</Text>
+          </View>
         }
         renderItem={({ item }) => (
           <PlanCard
@@ -84,9 +88,13 @@ function PlanCard({
   return (
     <View style={[styles.card, plan.isActive && styles.cardActive]}>
       <View style={styles.cardBody}>
+        {plan.isActive && (
+          <View style={styles.activePill}>
+            <Text style={styles.activePillText}>Activo</Text>
+          </View>
+        )}
         <Text style={styles.cardTitle}>{plan.name}</Text>
         {plan.description ? <Text style={styles.cardDesc}>{plan.description}</Text> : null}
-        {plan.isActive && <Text style={styles.activeBadge}>● Plan activo</Text>}
       </View>
       <View style={styles.actions}>
         {!plan.isActive && (
@@ -111,41 +119,62 @@ function PlanCard({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
-  list: { padding: 16, gap: 10 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", gap: spacing[3] },
+  list: { padding: spacing[4], gap: spacing[2] },
+
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing[4],
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "transparent",
   },
-  cardActive: { borderColor: "#2563eb" },
-  cardBody: { flex: 1, gap: 2 },
-  cardTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  cardDesc: { fontSize: 13, color: "#6b7280" },
-  activeBadge: { fontSize: 12, color: "#2563eb", fontWeight: "600", marginTop: 4 },
-  actions: { flexDirection: "row", gap: 8, marginLeft: 12, alignItems: "center" },
+  cardActive: { borderColor: colors.primary },
+  cardBody: { flex: 1, gap: 4 },
+  cardTitle: { fontSize: typography.md, fontWeight: typography.semibold, color: colors.textPrimary },
+  cardDesc: { fontSize: typography.sm, color: colors.textSecondary },
+
+  activePill: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[3],
+    paddingVertical: 2,
+    marginBottom: 2,
+  },
+  activePillText: { fontSize: typography.xs, fontWeight: typography.semibold, color: colors.primary },
+
+  actions: { flexDirection: "row", gap: spacing[2], marginLeft: spacing[3], alignItems: "center" },
   activateBtn: {
-    backgroundColor: "#eff6ff",
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
   },
   deleteBtn: {
-    backgroundColor: "#fff1f2",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: colors.dangerBg,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
   },
   btnDisabled: { opacity: 0.5 },
-  activateBtnText: { color: "#2563eb", fontWeight: "600", fontSize: 13 },
-  deleteBtnText: { color: "#ef4444", fontWeight: "700", fontSize: 14 },
-  empty: { textAlign: "center", color: "#9ca3af", marginTop: 60, fontSize: 14 },
-  errorText: { fontSize: 15, color: "#374151" },
-  retryBtn: { backgroundColor: "#eff6ff", borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
-  retryText: { color: "#2563eb", fontWeight: "600" },
+  activateBtnText: { color: colors.primary, fontWeight: typography.semibold, fontSize: typography.sm },
+  deleteBtnText: { color: colors.danger, fontWeight: typography.bold, fontSize: typography.sm },
+
+  emptyState: { alignItems: "center", marginTop: 80, gap: spacing[2] },
+  emptyTitle: { fontSize: typography.md, fontWeight: typography.semibold, color: colors.textSecondary },
+  emptySub: { fontSize: typography.sm, color: colors.textMuted },
+
+  errorText: { fontSize: typography.md, color: colors.textSecondary },
+  retryBtn: {
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing[5],
+    paddingVertical: spacing[2],
+  },
+  retryText: { fontSize: typography.sm, color: colors.primary, fontWeight: typography.semibold },
 });

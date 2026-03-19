@@ -35,8 +35,19 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const { accessToken, isLoading, clearAuth, loadTokens } = useAuthStore();
 
+  const isDemo = process.env.EXPO_PUBLIC_DEMO === "1";
+
   useEffect(() => {
     async function bootstrap() {
+      if (isDemo) {
+        useAuthStore.setState({
+          user: { id: "demo", name: "Carlos Ruiz", email: "carlos@demo.com" },
+          accessToken: "demo-token",
+          isLoading: false,
+        });
+        SplashScreen.hideAsync();
+        return;
+      }
       const token = await loadTokens();
       if (token) {
         try {

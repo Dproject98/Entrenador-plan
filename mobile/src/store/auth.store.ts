@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "@/lib/secure-store";
 import type { User } from "@/types/api.types";
 
 const ACCESS_TOKEN_KEY = "access_token";

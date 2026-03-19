@@ -5,6 +5,8 @@ import prismaPlugin from "./plugins/prisma.js";
 import jwtPlugin from "./plugins/jwt.js";
 import corsPlugin from "./plugins/cors.js";
 import authRoutes from "./routes/auth/index.js";
+import exerciseRoutes from "./routes/exercises/index.js";
+import workoutRoutes from "./routes/workouts/index.js";
 import { config } from "./config.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -25,6 +27,8 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // --- Routes ---
   await fastify.register(authRoutes, { prefix: "/api/v1/auth" });
+  await fastify.register(exerciseRoutes, { prefix: "/api/v1/exercises" });
+  await fastify.register(workoutRoutes, { prefix: "/api/v1" });
 
   // --- Global error handler ---
   fastify.setErrorHandler(async (error, request, reply) => {

@@ -1,19 +1,26 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { sessionsApi } from "@/services/api";
+import { useSessions } from "@/hooks/useWorkouts";
 import type { WorkoutSession } from "@/types/api.types";
 
 export default function WorkoutsScreen() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["sessions"],
-    queryFn: () => sessionsApi.list({ limit: 50 }),
-  });
+  const { data, isLoading, isError, refetch, isRefetching } = useSessions({ limit: 50 });
 
   if (isLoading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>Error al cargar sesiones</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
+          <Text style={styles.retryText}>Reintentar</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -24,11 +31,13 @@ export default function WorkoutsScreen() {
         data={data?.data ?? []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        onRefresh={refetch}
+        refreshing={isRefetching}
         ListEmptyComponent={
-          <Text style={styles.empty}>Sin sesiones aún. ¡Empieza tu primer entrenamiento!</Text>
+          <Text style={styles.empty}>Sin sesiones. ¡Empieza tu primer entrenamiento!</Text>
         }
         renderItem={({ item }) => <SessionCard session={item} />}
-        ListFooterComponent={<View style={{ height: 80 }} />}
+        ListFooterComponent={<View style={{ height: 88 }} />}
       />
 
       <TouchableOpacity style={styles.fab} onPress={() => router.push("/workout/log")}>
@@ -39,12 +48,13 @@ export default function WorkoutsScreen() {
 }
 
 function SessionCard({ session }: { session: WorkoutSession }) {
+  const ended = !!session.endedAt;
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={() => router.push(`/workout/${session.id}`)}
     >
-      <View>
+      <View style={styles.cardLeft}>
         <Text style={styles.cardTitle}>{session.name ?? "Sesión sin nombre"}</Text>
         <Text style={styles.cardDate}>
           {new Date(session.startedAt).toLocaleDateString("es", {
@@ -54,14 +64,19 @@ function SessionCard({ session }: { session: WorkoutSession }) {
           })}
         </Text>
       </View>
-      <Text style={styles.arrow}>›</Text>
+      <View style={styles.cardRight}>
+        <View style={[styles.badge, ended ? styles.badgeDone : styles.badgeActive]}>
+          <Text style={styles.badgeText}>{ended ? "Completada" : "En curso"}</Text>
+        </View>
+        <Text style={styles.arrow}>›</Text>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f3f4f6" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
   list: { padding: 16, gap: 10 },
   card: {
     backgroundColor: "#fff",
@@ -71,10 +86,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  cardLeft: { flex: 1, gap: 2 },
   cardTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  cardDate: { fontSize: 13, color: "#6b7280", marginTop: 2 },
+  cardDate: { fontSize: 13, color: "#6b7280", textTransform: "capitalize" },
+  cardRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeDone: { backgroundColor: "#dcfce7" },
+  badgeActive: { backgroundColor: "#fef9c3" },
+  badgeText: { fontSize: 11, fontWeight: "600", color: "#374151" },
   arrow: { fontSize: 22, color: "#9ca3af" },
   empty: { textAlign: "center", color: "#9ca3af", marginTop: 60, fontSize: 14, paddingHorizontal: 32 },
+  errorText: { fontSize: 15, color: "#374151" },
+  retryBtn: { backgroundColor: "#eff6ff", borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+  retryText: { color: "#2563eb", fontWeight: "600" },
   fab: {
     position: "absolute",
     bottom: 24,

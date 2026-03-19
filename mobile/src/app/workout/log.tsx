@@ -9,27 +9,30 @@ import {
   Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { sessionsApi } from "@/services/api";
+import { useCreateSession } from "@/hooks/useWorkouts";
 
 export default function LogWorkoutScreen() {
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
-  const queryClient = useQueryClient();
 
-  const create = useMutation({
-    mutationFn: () => sessionsApi.create({ name: name.trim() || undefined, notes: notes.trim() || undefined }),
-    onSuccess: (session) => {
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
-      router.replace(`/workout/${session.id}`);
-    },
-    onError: () => {
-      Alert.alert("Error", "No se pudo crear la sesión. Inténtalo de nuevo.");
-    },
-  });
+  const create = useCreateSession();
+
+  const handleStart = () => {
+    create.mutate(
+      { name: name.trim() || undefined, notes: notes.trim() || undefined },
+      {
+        onSuccess: (session) => router.replace(`/workout/${session.id}`),
+        onError: () => Alert.alert("Error", "No se pudo crear la sesión. Inténtalo de nuevo."),
+      }
+    );
+  };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.heading}>Nueva sesión</Text>
 
       <View style={styles.field}>
@@ -40,6 +43,7 @@ export default function LogWorkoutScreen() {
           onChangeText={setName}
           placeholder="Ej. Push day, Piernas..."
           placeholderTextColor="#9ca3af"
+          returnKeyType="next"
         />
       </View>
 
@@ -59,7 +63,7 @@ export default function LogWorkoutScreen() {
 
       <TouchableOpacity
         style={[styles.button, create.isPending && styles.buttonDisabled]}
-        onPress={() => create.mutate()}
+        onPress={handleStart}
         disabled={create.isPending}
       >
         <Text style={styles.buttonText}>

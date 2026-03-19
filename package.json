@@ -1,0 +1,30 @@
+{
+  "name": "entrenador-plan",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "api",
+    "mobile"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=api",
+    "dev:mobile": "npm run dev --workspace=mobile",
+    "build:api": "npm run build --workspace=api",
+    "db:migrate": "npm run db:migrate --workspace=api",
+    "db:seed": "npm run db:seed --workspace=api",
+    "db:studio": "npm run db:studio --workspace=api",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "dependencies": {
+    "ajv": "^8.18.0",
+    "expo-linking": "^55.0.8",
+    "puppeteer-core": "^24.40.0",
+    "react-dom": "^18.2.0",
+    "react-native-gesture-handler": "^2.30.0",
+    "react-native-reanimated": "^4.2.2",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.24.0",
+    "react-native-worklets": "^0.7.4"
+  }
+}

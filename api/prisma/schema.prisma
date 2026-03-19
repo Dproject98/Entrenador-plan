@@ -1,0 +1,274 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  FOREARMS
+  CORE
+  GLUTES
+  QUADS
+  HAMSTRINGS
+  CALVES
+  FULL_BODY
+  CARDIO
+
+  @@map("muscle_group")
+}
+
+enum Equipment {
+  BARBELL
+  DUMBBELL
+  CABLE
+  MACHINE
+  BODYWEIGHT
+  KETTLEBELL
+  RESISTANCE_BAND
+  SMITH_MACHINE
+  OTHER
+
+  @@map("equipment")
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+
+  @@map("meal_type")
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  refreshTokens   RefreshToken[]
+  workoutSessions WorkoutSession[]
+  mealLogs        MealLog[]
+  foods           Food[]
+  trainingPlans   TrainingPlan[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique @map("token_hash")
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Exercise Library (seed data, read-only for users)
+// ---------------------------------------------------------------------------
+
+model Exercise {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  muscleGroup MuscleGroup @map("muscle_group")
+  equipment   Equipment
+  description String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  workoutSets      WorkoutSet[]
+  plannedExercises PlannedExercise[]
+
+  @@index([muscleGroup])
+  @@map("exercises")
+}
+
+// ---------------------------------------------------------------------------
+// Workout Sessions & Sets
+// ---------------------------------------------------------------------------
+
+model WorkoutSession {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  planWorkoutId String?   @map("plan_workout_id")
+  name          String?
+  startedAt     DateTime  @default(now()) @map("started_at")
+  endedAt       DateTime? @map("ended_at")
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planWorkout PlanWorkout? @relation(fields: [planWorkoutId], references: [id], onDelete: SetNull)
+  sets        WorkoutSet[]
+
+  @@index([userId, startedAt])
+  @@map("workout_sessions")
+}
+
+model WorkoutSet {
+  id         String   @id @default(cuid())
+  sessionId  String   @map("session_id")
+  exerciseId String   @map("exercise_id")
+  setNumber  Int      @map("set_number")
+  reps       Int?
+  weightKg   Float?   @map("weight_kg")
+  rpe        Float?
+  completed  Boolean  @default(false)
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  session  WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise Exercise       @relation(fields: [exerciseId], references: [id])
+
+  @@index([sessionId])
+  @@map("workout_sets")
+}
+
+// ---------------------------------------------------------------------------
+// Nutrition
+// ---------------------------------------------------------------------------
+
+model Food {
+  id              String   @id @default(cuid())
+  name            String
+  brandName       String?  @map("brand_name")
+  caloriesPer100g Float    @map("calories_per_100g")
+  proteinPer100g  Float    @map("protein_per_100g")
+  carbsPer100g    Float    @map("carbs_per_100g")
+  fatPer100g      Float    @map("fat_per_100g")
+  isPrivate       Boolean  @default(false) @map("is_private")
+  userId          String?  @map("user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealEntries MealEntry[]
+
+  @@index([name])
+  @@index([userId])
+  @@map("foods")
+}
+
+model MealLog {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  date      DateTime @db.Date
+  mealType  MealType @map("meal_type")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries MealEntry[]
+
+  @@unique([userId, date, mealType])
+  @@index([userId, date])
+  @@map("meal_logs")
+}
+
+model MealEntry {
+  id        String   @id @default(cuid())
+  mealLogId String   @map("meal_log_id")
+  foodId    String   @map("food_id")
+  quantityG Float    @map("quantity_g")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  mealLog MealLog @relation(fields: [mealLogId], references: [id], onDelete: Cascade)
+  food    Food    @relation(fields: [foodId], references: [id])
+
+  @@index([mealLogId])
+  @@map("meal_entries")
+}
+
+// ---------------------------------------------------------------------------
+// Training Plans
+// ---------------------------------------------------------------------------
+
+model TrainingPlan {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  description String?
+  isActive    Boolean  @default(false) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeks PlanWeek[]
+
+  @@index([userId])
+  @@map("training_plans")
+}
+
+model PlanWeek {
+  id             String   @id @default(cuid())
+  trainingPlanId String   @map("training_plan_id")
+  weekNumber     Int      @map("week_number")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  trainingPlan TrainingPlan  @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  workouts     PlanWorkout[]
+
+  @@unique([trainingPlanId, weekNumber])
+  @@index([trainingPlanId])
+  @@map("plan_weeks")
+}
+
+model PlanWorkout {
+  id         String   @id @default(cuid())
+  planWeekId String   @map("plan_week_id")
+  dayOfWeek  Int      @map("day_of_week")
+  name       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  planWeek         PlanWeek          @relation(fields: [planWeekId], references: [id], onDelete: Cascade)
+  plannedExercises PlannedExercise[]
+  workoutSessions  WorkoutSession[]
+
+  @@index([planWeekId])
+  @@map("plan_workouts")
+}
+
+model PlannedExercise {
+  id            String   @id @default(cuid())
+  planWorkoutId String   @map("plan_workout_id")
+  exerciseId    String   @map("exercise_id")
+  sets          Int
+  reps          String
+  restSeconds   Int?     @map("rest_seconds")
+  notes         String?
+  orderIndex    Int      @map("order_index")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  planWorkout PlanWorkout @relation(fields: [planWorkoutId], references: [id], onDelete: Cascade)
+  exercise    Exercise    @relation(fields: [exerciseId], references: [id])
+
+  @@index([planWorkoutId])
+  @@map("planned_exercises")
+}

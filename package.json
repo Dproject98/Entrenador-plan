@@ -1,0 +1,19 @@
+{
+  "name": "entrenador-plan",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "api",
+    "mobile"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=api",
+    "dev:mobile": "npm run dev --workspace=mobile",
+    "build:api": "npm run build --workspace=api",
+    "db:migrate": "npm run db:migrate --workspace=api",
+    "db:seed": "npm run db:seed --workspace=api",
+    "db:studio": "npm run db:studio --workspace=api",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  }
+}

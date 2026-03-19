@@ -1,8 +1,9 @@
 import { TouchableOpacity, Text, StyleSheet, type TouchableOpacityProps } from "react-native";
+import { colors, typography, radius, spacing } from "@/lib/theme";
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
-  variant?: "primary" | "secondary" | "danger";
+  variant?: "primary" | "secondary" | "danger" | "ghost";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
 }
@@ -26,6 +27,7 @@ export function Button({
         style,
       ]}
       disabled={disabled || loading}
+      activeOpacity={0.75}
       {...rest}
     >
       <Text style={[styles.text, styles[`text_${variant}`], styles[`textSize_${size}`]]}>
@@ -36,23 +38,33 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
-  base: { borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  disabled: { opacity: 0.55 },
+  base: {
+    borderRadius: radius.full, // pill — Bluesky signature
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  disabled: { opacity: 0.5 },
 
-  variant_primary: { backgroundColor: "#2563eb" },
-  variant_secondary: { backgroundColor: "#f3f4f6", borderWidth: 1, borderColor: "#d1d5db" },
-  variant_danger: { backgroundColor: "#ef4444" },
+  variant_primary: { backgroundColor: colors.primary },
+  variant_secondary: {
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  variant_danger: { backgroundColor: colors.danger },
+  variant_ghost: { backgroundColor: "transparent" },
 
-  size_sm: { paddingVertical: 8, paddingHorizontal: 14 },
-  size_md: { paddingVertical: 13, paddingHorizontal: 20 },
-  size_lg: { paddingVertical: 16, paddingHorizontal: 24 },
+  size_sm: { paddingVertical: spacing[2], paddingHorizontal: spacing[4] },
+  size_md: { paddingVertical: spacing[3], paddingHorizontal: spacing[5] },
+  size_lg: { paddingVertical: spacing[4], paddingHorizontal: spacing[6] },
 
-  text: { fontWeight: "600" },
-  text_primary: { color: "#fff" },
-  text_secondary: { color: "#374151" },
-  text_danger: { color: "#fff" },
+  text: { fontWeight: typography.semibold },
+  text_primary: { color: colors.textInverted },
+  text_secondary: { color: colors.textPrimary },
+  text_danger: { color: colors.textInverted },
+  text_ghost: { color: colors.primary },
 
-  textSize_sm: { fontSize: 13 },
-  textSize_md: { fontSize: 15 },
-  textSize_lg: { fontSize: 16 },
+  textSize_sm: { fontSize: typography.sm },
+  textSize_md: { fontSize: typography.md },
+  textSize_lg: { fontSize: typography.md },
 });

@@ -16,14 +16,29 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { authApi } from "@/services/api";
 import { useAuthStore } from "@/store/auth.store";
+import { colors, typography, radius, spacing } from "@/lib/theme";
 
 const schema = z.object({
-  name: z.string().min(2, "Nombre debe tener al menos 2 caracteres"),
+  name: z.string().min(2, "Mínimo 2 caracteres"),
   email: z.string().email("Email inválido"),
   password: z.string().min(8, "Mínimo 8 caracteres"),
 });
 
 type FormValues = z.infer<typeof schema>;
+type FieldName = keyof FormValues;
+
+const FIELDS: Array<{
+  name: FieldName;
+  label: string;
+  placeholder: string;
+  keyboard: "default" | "email-address";
+  capitalize: "none" | "words";
+  secure: boolean;
+}> = [
+  { name: "name", label: "Nombre", placeholder: "Tu nombre", keyboard: "default", capitalize: "words", secure: false },
+  { name: "email", label: "Email", placeholder: "tu@email.com", keyboard: "email-address", capitalize: "none", secure: false },
+  { name: "password", label: "Contraseña", placeholder: "Mínimo 8 caracteres", keyboard: "default", capitalize: "none", secure: true },
+];
 
 export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
@@ -44,8 +59,8 @@ export default function RegisterScreen() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message ?? "Error al registrarse";
-      Alert.alert("Error", msg);
+          ?.message ?? "No se pudo crear la cuenta";
+      Alert.alert("Error al registrarse", msg);
     } finally {
       setLoading(false);
     }
@@ -57,84 +72,134 @@ export default function RegisterScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Crear cuenta</Text>
-        <Text style={styles.subtitle}>Empieza a entrenar hoy</Text>
+        <View style={styles.logoArea}>
+          <View style={styles.logoMark}>
+            <Text style={styles.logoLetter}>E</Text>
+          </View>
+          <Text style={styles.appName}>Crea tu cuenta</Text>
+        </View>
 
-        {(["name", "email", "password"] as const).map((field) => (
-          <Controller
-            key={field}
-            control={control}
-            name={field}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View style={styles.field}>
-                <Text style={styles.label}>
-                  {field === "name" ? "Nombre" : field === "email" ? "Email" : "Contraseña"}
-                </Text>
-                <TextInput
-                  style={[styles.input, errors[field] && styles.inputError]}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                  autoCapitalize={field === "name" ? "words" : "none"}
-                  keyboardType={field === "email" ? "email-address" : "default"}
-                  secureTextEntry={field === "password"}
-                  placeholder={
-                    field === "name" ? "Tu nombre" : field === "email" ? "tu@email.com" : "••••••••"
-                  }
-                  placeholderTextColor="#9ca3af"
-                />
-                {errors[field] && <Text style={styles.error}>{errors[field]?.message}</Text>}
-              </View>
-            )}
-          />
-        ))}
+        <View style={styles.form}>
+          {FIELDS.map((f) => (
+            <Controller
+              key={f.name}
+              control={control}
+              name={f.name}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View style={styles.field}>
+                  <Text style={styles.label}>{f.label}</Text>
+                  <TextInput
+                    style={[styles.input, errors[f.name] && styles.inputError]}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    value={value}
+                    autoCapitalize={f.capitalize}
+                    keyboardType={f.keyboard}
+                    secureTextEntry={f.secure}
+                    placeholder={f.placeholder}
+                    placeholderTextColor={colors.textMuted}
+                    returnKeyType={f.name === "password" ? "done" : "next"}
+                    onSubmitEditing={f.name === "password" ? handleSubmit(onSubmit) : undefined}
+                  />
+                  {errors[f.name] && (
+                    <Text style={styles.errorText}>{errors[f.name]?.message}</Text>
+                  )}
+                </View>
+              )}
+            />
+          ))}
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSubmit(onSubmit)}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>{loading ? "Cargando..." : "Crear cuenta"}</Text>
-        </TouchableOpacity>
-
-        <Link href="/(auth)/login" asChild>
-          <TouchableOpacity style={styles.linkBtn}>
-            <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
+          <TouchableOpacity
+            style={[styles.btn, loading && styles.btnDisabled]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.btnText}>{loading ? "Cargando..." : "Crear cuenta"}</Text>
           </TouchableOpacity>
-        </Link>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>¿Ya tienes cuenta?</Text>
+          <Link href="/(auth)/login" asChild>
+            <TouchableOpacity>
+              <Text style={styles.footerLink}> Inicia sesión</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  inner: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 40 },
-  title: { fontSize: 28, fontWeight: "700", color: "#111827", textAlign: "center", marginBottom: 4 },
-  subtitle: { fontSize: 15, color: "#6b7280", textAlign: "center", marginBottom: 24 },
-  field: { marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  inner: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: spacing[6],
+    paddingVertical: spacing[10],
+  },
+  logoArea: { alignItems: "center", marginBottom: spacing[6], gap: spacing[3] },
+  logoMark: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoLetter: {
+    fontSize: typography["2xl"],
+    fontWeight: typography.bold,
+    color: colors.textInverted,
+  },
+  appName: {
+    fontSize: typography.xl,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
+  },
+  form: { gap: spacing[4] },
+  field: { gap: spacing[1] },
+  label: {
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+    color: colors.textSecondary,
+  },
   input: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#111827",
-    backgroundColor: "#f9fafb",
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    fontSize: typography.md,
+    color: colors.textPrimary,
+    backgroundColor: colors.bgCard,
   },
-  inputError: { borderColor: "#ef4444" },
-  error: { marginTop: 4, fontSize: 12, color: "#ef4444" },
-  button: {
-    backgroundColor: "#2563eb",
-    borderRadius: 10,
-    paddingVertical: 14,
+  inputError: { borderColor: colors.danger },
+  errorText: { fontSize: typography.xs, color: colors.danger },
+  btn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingVertical: spacing[4],
     alignItems: "center",
-    marginTop: 8,
+    marginTop: spacing[2],
   },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  linkBtn: { alignItems: "center", marginTop: 16 },
-  link: { color: "#2563eb", fontSize: 14 },
+  btnDisabled: { opacity: 0.55 },
+  btnText: {
+    color: colors.textInverted,
+    fontSize: typography.md,
+    fontWeight: typography.semibold,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: spacing[6],
+  },
+  footerText: { fontSize: typography.sm, color: colors.textSecondary },
+  footerLink: {
+    fontSize: typography.sm,
+    color: colors.primary,
+    fontWeight: typography.semibold,
+  },
 });

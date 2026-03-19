@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useSessions } from "@/hooks/useWorkouts";
 import { useNutritionSummary } from "@/hooks/useNutrition";
 import { useLogout } from "@/hooks/useAuth";
+import { colors, typography, radius, spacing } from "@/lib/theme";
 
 function toLocalDateString(d = new Date()) {
   return d.toISOString().split("T")[0];
@@ -19,62 +20,98 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hola, {user?.name ?? "atleta"} 👋</Text>
-        <TouchableOpacity onPress={() => logout.mutate()} disabled={logout.isPending}>
+        <View>
+          <Text style={styles.greeting}>Hola, {user?.name?.split(" ")[0] ?? "atleta"}</Text>
+          <Text style={styles.date}>
+            {new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => logout.mutate()}
+          disabled={logout.isPending}
+        >
           <Text style={styles.logoutText}>{logout.isPending ? "..." : "Salir"}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Nutrition summary */}
+      {/* Macro summary */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Nutrición hoy</Text>
         {summary ? (
           <View style={styles.macroRow}>
-            <MacroCell label="Calorías" value={`${Math.round(summary.totals.calories)}`} unit="kcal" />
+            <MacroCell label="Calorías" value={`${Math.round(summary.totals.calories)}`} unit="kcal" accent />
+            <View style={styles.macroDivider} />
             <MacroCell label="Proteína" value={summary.totals.protein.toFixed(1)} unit="g" />
+            <View style={styles.macroDivider} />
             <MacroCell label="Carbos" value={summary.totals.carbs.toFixed(1)} unit="g" />
+            <View style={styles.macroDivider} />
             <MacroCell label="Grasa" value={summary.totals.fat.toFixed(1)} unit="g" />
           </View>
         ) : (
-          <Text style={styles.empty}>Sin registros aún</Text>
+          <Text style={styles.emptyText}>Sin registros hoy</Text>
         )}
       </View>
 
       {/* Recent sessions */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Últimas sesiones</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Últimas sesiones</Text>
+          <TouchableOpacity onPress={() => router.push("/(tabs)/workouts")}>
+            <Text style={styles.seeAll}>Ver todo</Text>
+          </TouchableOpacity>
+        </View>
+
         {sessionsLoading ? (
-          <ActivityIndicator color="#2563eb" style={{ marginVertical: 8 }} />
+          <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing[3] }} />
         ) : sessions?.data.length ? (
-          sessions.data.map((s) => (
+          sessions.data.map((s, i) => (
             <TouchableOpacity
               key={s.id}
-              style={styles.row}
+              style={[styles.row, i === 0 && styles.rowFirst]}
               onPress={() => router.push(`/workout/${s.id}`)}
             >
-              <Text style={styles.rowTitle}>{s.name ?? "Sesión sin nombre"}</Text>
-              <Text style={styles.rowDate}>
-                {new Date(s.startedAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
-              </Text>
+              <View style={styles.rowDot} />
+              <View style={styles.rowBody}>
+                <Text style={styles.rowTitle}>{s.name ?? "Sesión sin nombre"}</Text>
+                <Text style={styles.rowDate}>
+                  {new Date(s.startedAt).toLocaleDateString("es", {
+                    weekday: "short", day: "numeric", month: "short",
+                  })}
+                </Text>
+              </View>
+              <Text style={styles.rowArrow}>›</Text>
             </TouchableOpacity>
           ))
         ) : (
-          <Text style={styles.empty}>Sin sesiones aún</Text>
+          <Text style={styles.emptyText}>Sin sesiones aún</Text>
         )}
       </View>
 
-      <TouchableOpacity style={styles.cta} onPress={() => router.push("/workout/log")}>
-        <Text style={styles.ctaText}>+ Nueva sesión</Text>
+      {/* CTA */}
+      <TouchableOpacity style={styles.cta} onPress={() => router.push("/workout/log")} activeOpacity={0.8}>
+        <Text style={styles.ctaText}>+ Nuevo entrenamiento</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-function MacroCell({ label, value, unit }: { label: string; value: string; unit: string }) {
+function MacroCell({
+  label,
+  value,
+  unit,
+  accent,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+  accent?: boolean;
+}) {
   return (
     <View style={styles.macroCell}>
-      <Text style={styles.macroValue}>{value}</Text>
+      <Text style={[styles.macroValue, accent && styles.macroValueAccent]}>{value}</Text>
       <Text style={styles.macroUnit}>{unit}</Text>
       <Text style={styles.macroLabel}>{label}</Text>
     </View>
@@ -82,29 +119,74 @@ function MacroCell({ label, value, unit }: { label: string; value: string; unit:
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  content: { padding: 16, gap: 12 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
-  greeting: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  logoutText: { fontSize: 14, color: "#ef4444" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 16, gap: 8 },
-  cardTitle: { fontSize: 16, fontWeight: "600", color: "#111827" },
-  macroRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-  macroCell: { alignItems: "center", flex: 1 },
-  macroValue: { fontSize: 18, fontWeight: "700", color: "#2563eb" },
-  macroUnit: { fontSize: 10, color: "#2563eb" },
-  macroLabel: { fontSize: 11, color: "#6b7280", marginTop: 2 },
-  row: {
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing[4], gap: spacing[3] },
+
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
+    alignItems: "flex-start",
+    marginBottom: spacing[1],
   },
-  rowTitle: { fontSize: 14, fontWeight: "500", color: "#111827" },
-  rowDate: { fontSize: 13, color: "#6b7280" },
-  empty: { fontSize: 14, color: "#9ca3af", textAlign: "center", paddingVertical: 8 },
-  cta: { backgroundColor: "#2563eb", borderRadius: 12, paddingVertical: 16, alignItems: "center" },
-  ctaText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  greeting: { fontSize: typography.xl, fontWeight: typography.bold, color: colors.textPrimary },
+  date: { fontSize: typography.sm, color: colors.textSecondary, marginTop: 2, textTransform: "capitalize" },
+  logoutBtn: {
+    paddingVertical: spacing[1],
+    paddingHorizontal: spacing[3],
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  logoutText: { fontSize: typography.sm, color: colors.textSecondary },
+
+  card: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing[4],
+    gap: spacing[3],
+  },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  cardTitle: { fontSize: typography.md, fontWeight: typography.semibold, color: colors.textPrimary },
+  seeAll: { fontSize: typography.sm, color: colors.primary, fontWeight: typography.medium },
+
+  macroRow: { flexDirection: "row", alignItems: "center" },
+  macroCell: { flex: 1, alignItems: "center", gap: 2 },
+  macroDivider: { width: 1, height: 36, backgroundColor: colors.border },
+  macroValue: { fontSize: typography.lg, fontWeight: typography.bold, color: colors.textPrimary },
+  macroValueAccent: { color: colors.primary },
+  macroUnit: { fontSize: typography.xs, color: colors.textMuted },
+  macroLabel: { fontSize: typography.xs, color: colors.textSecondary },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing[3],
+    borderTopWidth: 1,
+    borderTopColor: colors.gray2,
+    gap: spacing[3],
+  },
+  rowFirst: { borderTopWidth: 0, paddingTop: 0 },
+  rowDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+  },
+  rowBody: { flex: 1 },
+  rowTitle: { fontSize: typography.sm, fontWeight: typography.medium, color: colors.textPrimary },
+  rowDate: { fontSize: typography.xs, color: colors.textSecondary, marginTop: 1, textTransform: "capitalize" },
+  rowArrow: { fontSize: 20, color: colors.gray4 },
+
+  emptyText: { fontSize: typography.sm, color: colors.textMuted, textAlign: "center", paddingVertical: spacing[2] },
+
+  cta: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingVertical: spacing[4],
+    alignItems: "center",
+    marginTop: spacing[1],
+  },
+  ctaText: { color: colors.textInverted, fontSize: typography.md, fontWeight: typography.semibold },
 });

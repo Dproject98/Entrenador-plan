@@ -1,4 +1,5 @@
 import { Text, StyleSheet, type TextProps } from "react-native";
+import { colors, typography } from "@/lib/theme";
 
 type Variant = "title" | "heading" | "body" | "caption" | "label";
 type Color = "default" | "muted" | "primary" | "danger";
@@ -18,14 +19,34 @@ export function AppText({ variant = "body", color = "default", style, ...rest }:
 }
 
 const styles = StyleSheet.create({
-  variant_title: { fontSize: 26, fontWeight: "700", lineHeight: 32 },
-  variant_heading: { fontSize: 18, fontWeight: "600", lineHeight: 24 },
-  variant_body: { fontSize: 15, lineHeight: 22 },
-  variant_caption: { fontSize: 12, lineHeight: 16 },
-  variant_label: { fontSize: 14, fontWeight: "600", lineHeight: 20 },
+  variant_title: {
+    fontSize: typography["2xl"],
+    fontWeight: typography.bold,
+    lineHeight: typography["2xl"] * typography.lineHeightTight,
+  },
+  variant_heading: {
+    fontSize: typography.lg,
+    fontWeight: typography.semibold,
+    lineHeight: typography.lg * typography.lineHeightNormal,
+  },
+  variant_body: {
+    fontSize: typography.md,
+    fontWeight: typography.normal,
+    lineHeight: typography.md * typography.lineHeightNormal,
+  },
+  variant_caption: {
+    fontSize: typography.xs,
+    fontWeight: typography.normal,
+    lineHeight: typography.xs * typography.lineHeightNormal,
+  },
+  variant_label: {
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+    lineHeight: typography.sm * typography.lineHeightNormal,
+  },
 
-  color_default: { color: "#111827" },
-  color_muted: { color: "#6b7280" },
-  color_primary: { color: "#2563eb" },
-  color_danger: { color: "#ef4444" },
+  color_default: { color: colors.textPrimary },
+  color_muted: { color: colors.textSecondary },
+  color_primary: { color: colors.primary },
+  color_danger: { color: colors.danger },
 });

@@ -1,10 +1,11 @@
 import { View, StyleSheet, type ViewProps } from "react-native";
+import { colors, radius, spacing } from "@/lib/theme";
 
 interface CardProps extends ViewProps {
   padding?: number;
 }
 
-export function Card({ style, padding = 16, children, ...rest }: CardProps) {
+export function Card({ style, padding = spacing[4], children, ...rest }: CardProps) {
   return (
     <View style={[styles.card, { padding }, style]} {...rest}>
       {children}
@@ -14,12 +15,9 @@ export function Card({ style, padding = 16, children, ...rest }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border, // Bluesky: border, no shadow
   },
 });

@@ -1,14 +1,8 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useMeals, useNutritionSummary, useCreateMeal } from "@/hooks/useNutrition";
 import { NutritionSkeleton } from "@/components/ui/Skeleton";
+import { colors, typography, radius, spacing } from "@/lib/theme";
 import type { MealLog, MealType } from "@/types/api.types";
 
 const MEAL_LABELS: Record<MealType, string> = {
@@ -16,6 +10,13 @@ const MEAL_LABELS: Record<MealType, string> = {
   LUNCH: "Almuerzo",
   DINNER: "Cena",
   SNACK: "Snack",
+};
+
+const MEAL_ICONS: Record<MealType, string> = {
+  BREAKFAST: "☀️",
+  LUNCH: "🕛",
+  DINNER: "🌙",
+  SNACK: "🍎",
 };
 
 const MEAL_ORDER: MealType[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"];
@@ -26,62 +27,74 @@ function toLocalDateString(d = new Date()) {
 
 export default function NutritionScreen() {
   const [date] = useState(toLocalDateString());
-
   const { data: meals, isLoading } = useMeals(date);
   const { data: summary } = useNutritionSummary(date);
   const createMeal = useCreateMeal();
-
-  const handleCreateMeal = (mealType: MealType) => {
-    createMeal.mutate(
-      { date, mealType },
-      {
-        onError: () => Alert.alert("Error", "No se pudo crear el registro de comida"),
-      }
-    );
-  };
 
   if (isLoading) return <NutritionSkeleton />;
 
   const mealMap = new Map(meals?.map((m) => [m.mealType, m]));
 
+  const handleCreate = (mealType: MealType) => {
+    createMeal.mutate(
+      { date, mealType },
+      { onError: () => Alert.alert("Error", "No se pudo crear el registro") }
+    );
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.dateLabel}>
         {new Date(date + "T12:00:00").toLocaleDateString("es", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
+          weekday: "long", day: "numeric", month: "long",
         })}
       </Text>
 
       {/* Daily totals */}
-      <View style={styles.summaryCard}>
-        <Text style={styles.sectionTitle}>Totales del día</Text>
-        {summary ? (
-          <View style={styles.macroRow}>
-            <MacroCell value={`${Math.round(summary.totals.calories)}`} unit="kcal" label="Calorías" />
-            <MacroCell value={summary.totals.protein.toFixed(1)} unit="g" label="Proteína" />
-            <MacroCell value={summary.totals.carbs.toFixed(1)} unit="g" label="Carbos" />
-            <MacroCell value={summary.totals.fat.toFixed(1)} unit="g" label="Grasa" />
+      {summary && (
+        <View style={styles.summaryCard}>
+          <View style={styles.calorieRow}>
+            <Text style={styles.calorieValue}>
+              {Math.round(summary.totals.calories)}
+            </Text>
+            <Text style={styles.calorieUnit}>kcal</Text>
           </View>
-        ) : (
-          <Text style={styles.empty}>Sin registros hoy</Text>
-        )}
-      </View>
+          <View style={styles.macroBar}>
+            <View style={styles.macroBarItem}>
+              <View style={[styles.macroBarDot, { backgroundColor: "#3B82F6" }]} />
+              <Text style={styles.macroBarLabel}>Prot</Text>
+              <Text style={styles.macroBarValue}>{summary.totals.protein.toFixed(0)}g</Text>
+            </View>
+            <View style={styles.macroBarItem}>
+              <View style={[styles.macroBarDot, { backgroundColor: "#F59E0B" }]} />
+              <Text style={styles.macroBarLabel}>Carb</Text>
+              <Text style={styles.macroBarValue}>{summary.totals.carbs.toFixed(0)}g</Text>
+            </View>
+            <View style={styles.macroBarItem}>
+              <View style={[styles.macroBarDot, { backgroundColor: "#EF4444" }]} />
+              <Text style={styles.macroBarLabel}>Gras</Text>
+              <Text style={styles.macroBarValue}>{summary.totals.fat.toFixed(0)}g</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Meal slots */}
-      {MEAL_ORDER.map((mealType) => {
-        const meal = mealMap.get(mealType);
-        return (
-          <MealSlot
-            key={mealType}
-            mealType={mealType}
-            meal={meal}
-            onAdd={() => handleCreateMeal(mealType)}
-            adding={createMeal.isPending && createMeal.variables?.mealType === mealType}
-          />
-        );
-      })}
+      <View style={styles.mealsSection}>
+        {MEAL_ORDER.map((mealType) => {
+          const meal = mealMap.get(mealType);
+          const adding = createMeal.isPending && createMeal.variables?.mealType === mealType;
+          return (
+            <MealSlot
+              key={mealType}
+              mealType={mealType}
+              meal={meal}
+              onAdd={() => handleCreate(mealType)}
+              adding={adding}
+            />
+          );
+        })}
+      </View>
     </ScrollView>
   );
 }
@@ -99,56 +112,94 @@ function MealSlot({
 }) {
   return (
     <View style={styles.mealCard}>
-      <View style={styles.mealHeader}>
-        <Text style={styles.mealTitle}>{MEAL_LABELS[mealType]}</Text>
-        {!meal && (
-          <TouchableOpacity
-            style={[styles.addBtn, adding && styles.addBtnDisabled]}
-            onPress={onAdd}
-            disabled={adding}
-          >
-            <Text style={styles.addBtnText}>{adding ? "..." : "+ Agregar"}</Text>
-          </TouchableOpacity>
-        )}
+      <View style={styles.mealLeft}>
+        <Text style={styles.mealIcon}>{MEAL_ICONS[mealType]}</Text>
+        <View>
+          <Text style={styles.mealTitle}>{MEAL_LABELS[mealType]}</Text>
+          {meal ? (
+            <Text style={styles.mealRegistered}>Registrado</Text>
+          ) : (
+            <Text style={styles.mealEmpty}>Sin alimentos</Text>
+          )}
+        </View>
       </View>
-      {meal ? (
-        <Text style={styles.mealRegistered}>Registrado ✓</Text>
-      ) : (
-        <Text style={styles.mealEmpty}>Sin alimentos registrados</Text>
+      {!meal && (
+        <TouchableOpacity
+          style={[styles.addBtn, adding && styles.addBtnDisabled]}
+          onPress={onAdd}
+          disabled={adding}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.addBtnText}>{adding ? "..." : "+ Agregar"}</Text>
+        </TouchableOpacity>
       )}
-    </View>
-  );
-}
-
-function MacroCell({ value, unit, label }: { value: string; unit: string; label: string }) {
-  return (
-    <View style={styles.macroCell}>
-      <Text style={styles.macroValue}>{value}</Text>
-      <Text style={styles.macroUnit}>{unit}</Text>
-      <Text style={styles.macroLabel}>{label}</Text>
+      {meal && <Text style={styles.checkmark}>✓</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  content: { padding: 16, gap: 12 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  dateLabel: { fontSize: 16, fontWeight: "600", color: "#374151", textTransform: "capitalize" },
-  summaryCard: { backgroundColor: "#fff", borderRadius: 12, padding: 16, gap: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  macroRow: { flexDirection: "row", justifyContent: "space-between" },
-  macroCell: { alignItems: "center", flex: 1 },
-  macroValue: { fontSize: 18, fontWeight: "700", color: "#2563eb" },
-  macroUnit: { fontSize: 10, color: "#2563eb" },
-  macroLabel: { fontSize: 11, color: "#6b7280", marginTop: 2 },
-  empty: { fontSize: 14, color: "#9ca3af", textAlign: "center", paddingVertical: 4 },
-  mealCard: { backgroundColor: "#fff", borderRadius: 12, padding: 16, gap: 8 },
-  mealHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  mealTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  addBtn: { backgroundColor: "#eff6ff", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing[4], gap: spacing[3] },
+
+  dateLabel: {
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+    color: colors.textSecondary,
+    textTransform: "capitalize",
+    marginBottom: spacing[1],
+  },
+
+  summaryCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing[4],
+    alignItems: "center",
+    gap: spacing[3],
+  },
+  calorieRow: { flexDirection: "row", alignItems: "baseline", gap: spacing[1] },
+  calorieValue: { fontSize: 40, fontWeight: typography.bold, color: colors.textPrimary, lineHeight: 48 },
+  calorieUnit: { fontSize: typography.lg, color: colors.textSecondary, fontWeight: typography.medium },
+  macroBar: {
+    flexDirection: "row",
+    gap: spacing[5],
+    paddingTop: spacing[2],
+    borderTopWidth: 1,
+    borderTopColor: colors.gray2,
+    width: "100%",
+    justifyContent: "center",
+  },
+  macroBarItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+  macroBarDot: { width: 8, height: 8, borderRadius: radius.full },
+  macroBarLabel: { fontSize: typography.sm, color: colors.textSecondary },
+  macroBarValue: { fontSize: typography.sm, fontWeight: typography.semibold, color: colors.textPrimary },
+
+  mealsSection: { gap: spacing[2] },
+  mealCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing[4],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  mealLeft: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
+  mealIcon: { fontSize: 22 },
+  mealTitle: { fontSize: typography.md, fontWeight: typography.semibold, color: colors.textPrimary },
+  mealRegistered: { fontSize: typography.xs, color: colors.success, marginTop: 2 },
+  mealEmpty: { fontSize: typography.xs, color: colors.textMuted, marginTop: 2 },
+  addBtn: {
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[1],
+  },
   addBtnDisabled: { opacity: 0.5 },
-  addBtnText: { color: "#2563eb", fontWeight: "600", fontSize: 13 },
-  mealRegistered: { fontSize: 13, color: "#16a34a" },
-  mealEmpty: { fontSize: 13, color: "#9ca3af" },
+  addBtnText: { fontSize: typography.sm, color: colors.primary, fontWeight: typography.semibold },
+  checkmark: { fontSize: 18, color: colors.success, fontWeight: typography.bold },
 });

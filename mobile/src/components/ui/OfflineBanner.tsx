@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet } from "react-native";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { colors, typography, spacing } from "@/lib/theme";
 
 export function OfflineBanner() {
   const { isOnline } = useNetworkStatus();
-
   if (isOnline) return null;
 
   return (
@@ -15,10 +15,14 @@ export function OfflineBanner() {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: "#f59e0b",
-    paddingVertical: 7,
-    paddingHorizontal: 16,
+    backgroundColor: colors.warning,
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[4],
     alignItems: "center",
   },
-  text: { color: "#fff", fontSize: 13, fontWeight: "600" },
+  text: {
+    color: colors.textInverted,
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+  },
 });

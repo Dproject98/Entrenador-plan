@@ -1,18 +1,13 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useSessions } from "@/hooks/useWorkouts";
+import { SessionListSkeleton } from "@/components/ui/Skeleton";
 import type { WorkoutSession } from "@/types/api.types";
 
 export default function WorkoutsScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = useSessions({ limit: 50 });
 
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#2563eb" />
-      </View>
-    );
-  }
+  if (isLoading) return <SessionListSkeleton />;
 
   if (isError) {
     return (

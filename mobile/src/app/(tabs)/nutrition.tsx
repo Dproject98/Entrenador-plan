@@ -5,10 +5,10 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { useMeals, useNutritionSummary, useCreateMeal } from "@/hooks/useNutrition";
+import { NutritionSkeleton } from "@/components/ui/Skeleton";
 import type { MealLog, MealType } from "@/types/api.types";
 
 const MEAL_LABELS: Record<MealType, string> = {
@@ -40,13 +40,7 @@ export default function NutritionScreen() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#2563eb" />
-      </View>
-    );
-  }
+  if (isLoading) return <NutritionSkeleton />;
 
   const mealMap = new Map(meals?.map((m) => [m.mealType, m]));
 

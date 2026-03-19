@@ -4,11 +4,11 @@ import {
   SectionList,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSession, useUpdateSession, useDeleteSession, useUpdateSet, useDeleteSet } from "@/hooks/useWorkouts";
+import { SessionDetailSkeleton } from "@/components/ui/Skeleton";
 import type { WorkoutSet } from "@/types/api.types";
 
 export default function SessionDetailScreen() {
@@ -20,13 +20,7 @@ export default function SessionDetailScreen() {
   const updateSet = useUpdateSet(sessionId);
   const deleteSet = useDeleteSet(sessionId);
 
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#2563eb" />
-      </View>
-    );
-  }
+  if (isLoading) return <SessionDetailSkeleton />;
 
   if (!session) {
     return (

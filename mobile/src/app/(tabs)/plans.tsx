@@ -4,10 +4,10 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { usePlans, useActivatePlan, useDeletePlan } from "@/hooks/usePlans";
+import { PlanListSkeleton } from "@/components/ui/Skeleton";
 import type { TrainingPlan } from "@/types/api.types";
 
 export default function PlansScreen() {
@@ -15,13 +15,7 @@ export default function PlansScreen() {
   const activate = useActivatePlan();
   const deletePlan = useDeletePlan();
 
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#2563eb" />
-      </View>
-    );
-  }
+  if (isLoading) return <PlanListSkeleton />;
 
   if (isError) {
     return (

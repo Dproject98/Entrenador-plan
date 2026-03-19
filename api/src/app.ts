@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth/index.js";
 import exerciseRoutes from "./routes/exercises/index.js";
 import workoutRoutes from "./routes/workouts/index.js";
 import nutritionRoutes from "./routes/nutrition/index.js";
+import planRoutes from "./routes/plans/index.js";
 import { config } from "./config.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -31,6 +32,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await fastify.register(exerciseRoutes, { prefix: "/api/v1/exercises" });
   await fastify.register(workoutRoutes, { prefix: "/api/v1" });
   await fastify.register(nutritionRoutes, { prefix: "/api/v1" });
+  await fastify.register(planRoutes, { prefix: "/api/v1" });
 
   // --- Global error handler ---
   fastify.setErrorHandler(async (error, request, reply) => {

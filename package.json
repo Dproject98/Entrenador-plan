@@ -15,5 +15,15 @@
     "db:studio": "npm run db:studio --workspace=api",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
+  },
+  "dependencies": {
+    "ajv": "^8.18.0",
+    "expo-linking": "^55.0.8",
+    "react-dom": "^18.2.0",
+    "react-native-gesture-handler": "^2.30.0",
+    "react-native-reanimated": "^4.2.2",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.24.0",
+    "react-native-worklets": "^0.7.4"
   }
 }

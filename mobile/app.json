@@ -25,6 +25,10 @@
     },
     "plugins": ["expo-router", "expo-secure-store"],
     "scheme": "entrenadorplan",
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
     "experiments": {
       "typedRoutes": true
     }

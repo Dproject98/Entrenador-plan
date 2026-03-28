@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import fp from "fastify-plugin";
 import { authenticate } from "../../hooks/authenticate.js";
 import { listFoodsHandler } from "./foods-list.js";
 import { createFoodHandler } from "./foods-create.js";
@@ -40,4 +39,4 @@ async function nutritionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get("/nutrition/summary", auth, summaryHandler);
 }
 
-export default fp(nutritionRoutes, { name: "nutrition-routes" });
+export default nutritionRoutes;

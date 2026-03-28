@@ -11,6 +11,19 @@ datasource db {
 // Enums
 // ---------------------------------------------------------------------------
 
+enum CardioType {
+  RUNNING
+  CYCLING
+  SWIMMING
+  ROWING
+  ELLIPTICAL
+  WALKING
+  HIIT
+  OTHER
+
+  @@map("cardio_type")
+}
+
 enum MuscleGroup {
   CHEST
   BACK
@@ -64,11 +77,20 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  refreshTokens   RefreshToken[]
-  workoutSessions WorkoutSession[]
-  mealLogs        MealLog[]
-  foods           Food[]
-  trainingPlans   TrainingPlan[]
+  refreshTokens           RefreshToken[]
+  workoutSessions         WorkoutSession[]
+  mealLogs                MealLog[]
+  foods                   Food[]
+  trainingPlans           TrainingPlan[]
+  following               Follow[]              @relation("follower")
+  followers               Follow[]              @relation("following")
+  workoutLikes            WorkoutLike[]
+  workoutComments         WorkoutComment[]
+  challenges              Challenge[]
+  challengeParticipations ChallengeParticipant[]
+  bodyMeasurements        BodyMeasurement[]
+  goal                    UserGoal?
+  cardioLogs              CardioLog[]
 
   @@map("users")
 }
@@ -123,6 +145,8 @@ model WorkoutSession {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   planWorkout PlanWorkout? @relation(fields: [planWorkoutId], references: [id], onDelete: SetNull)
   sets        WorkoutSet[]
+  likes       WorkoutLike[]
+  comments    WorkoutComment[]
 
   @@index([userId, startedAt])
   @@map("workout_sessions")
@@ -271,4 +295,161 @@ model PlannedExercise {
 
   @@index([planWorkoutId])
   @@map("planned_exercises")
+}
+
+// ---------------------------------------------------------------------------
+// Social
+// ---------------------------------------------------------------------------
+
+enum ChallengeType {
+  VOLUME_KG
+  SESSIONS_COUNT
+  STREAK_DAYS
+
+  @@map("challenge_type")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("follower",  fields: [followerId],  references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model WorkoutLike {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  sessionId String   @map("session_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User           @relation(fields: [userId],    references: [id], onDelete: Cascade)
+  session WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sessionId])
+  @@index([sessionId])
+  @@map("workout_likes")
+}
+
+model WorkoutComment {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  sessionId String   @map("session_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User           @relation(fields: [userId],    references: [id], onDelete: Cascade)
+  session WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("workout_comments")
+}
+
+model Challenge {
+  id          String        @id @default(cuid())
+  creatorId   String        @map("creator_id")
+  name        String
+  description String?
+  type        ChallengeType
+  goal        Float         @default(0)
+  startDate   DateTime      @map("start_date") @db.Date
+  endDate     DateTime      @map("end_date")   @db.Date
+  isPublic    Boolean       @default(true) @map("is_public")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  creator      User                   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  participants ChallengeParticipant[]
+
+  @@index([creatorId])
+  @@index([startDate, endDate])
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  id          String   @id @default(cuid())
+  challengeId String   @map("challenge_id")
+  userId      String   @map("user_id")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId],      references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@index([challengeId])
+  @@map("challenge_participants")
+}
+
+// ---------------------------------------------------------------------------
+// Body Measurements
+// ---------------------------------------------------------------------------
+
+model BodyMeasurement {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  date         DateTime @db.Date
+  weightKg     Float?   @map("weight_kg")
+  bodyFatPct   Float?   @map("body_fat_pct")
+  muscleMassPct Float?  @map("muscle_mass_pct")
+  chestCm      Float?   @map("chest_cm")
+  waistCm      Float?   @map("waist_cm")
+  hipsCm       Float?   @map("hips_cm")
+  armCm        Float?   @map("arm_cm")
+  thighCm      Float?   @map("thigh_cm")
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("body_measurements")
+}
+
+// ---------------------------------------------------------------------------
+// User Goals
+// ---------------------------------------------------------------------------
+
+model UserGoal {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique @map("user_id")
+  weeklySessionsTarget    Int      @default(3) @map("weekly_sessions_target")
+  weeklyVolumeKgTarget    Float?   @map("weekly_volume_kg_target")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_goals")
+}
+
+// ---------------------------------------------------------------------------
+// Cardio Logs
+// ---------------------------------------------------------------------------
+
+model CardioLog {
+  id             String     @id @default(cuid())
+  userId         String     @map("user_id")
+  date           DateTime   @db.Date
+  type           CardioType
+  durationMin    Int        @map("duration_min")
+  distanceKm     Float?     @map("distance_km")
+  caloriesBurned Int?       @map("calories_burned")
+  avgHeartRate   Int?       @map("avg_heart_rate")
+  notes          String?
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("cardio_logs")
 }

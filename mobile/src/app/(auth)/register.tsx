@@ -55,7 +55,7 @@ export default function RegisterScreen() {
     try {
       const data = await authApi.register(values);
       await setAuth(data.user, data.accessToken, data.refreshToken);
-      router.replace("/(tabs)/");
+      router.replace("/(tabs)");
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error

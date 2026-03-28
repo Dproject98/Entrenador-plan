@@ -14,8 +14,8 @@ export async function issueTokenPair(
   fastify: FastifyInstance,
   userId: string
 ): Promise<TokenPair> {
-  const accessToken = await fastify.accessSign({ sub: userId });
-  const refreshToken = await fastify.refreshSign({ sub: userId });
+  const accessToken = await fastify.jwt.access.sign({ sub: userId });
+  const refreshToken = await fastify.jwt.refresh.sign({ sub: userId });
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);

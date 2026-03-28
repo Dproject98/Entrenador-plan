@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import fp from "fastify-plugin";
 import { registerHandler } from "./register.js";
 import { loginHandler } from "./login.js";
 import { refreshHandler } from "./refresh.js";
@@ -13,4 +12,4 @@ async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get("/me", { preHandler: [authenticate] }, meHandler);
 }
 
-export default fp(authRoutes, { name: "auth-routes" });
+export default authRoutes;

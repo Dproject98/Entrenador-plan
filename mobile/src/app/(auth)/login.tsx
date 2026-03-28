@@ -39,7 +39,7 @@ export default function LoginScreen() {
     try {
       const data = await authApi.login(values);
       await setAuth(data.user, data.accessToken, data.refreshToken);
-      router.replace("/(tabs)/");
+      router.replace("/(tabs)");
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error

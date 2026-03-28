@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   View,
   Text,
@@ -9,17 +10,21 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { useSession, useUpdateSession, useDeleteSession, useUpdateSet, useDeleteSet } from "@/hooks/useWorkouts";
 import { SessionDetailSkeleton } from "@/components/ui/Skeleton";
+import { RestTimer } from "@/components/ui/RestTimer";
+import { useTimerStore } from "@/store/timer.store";
 import { colors, typography, radius, spacing } from "@/lib/theme";
 import type { WorkoutSet } from "@/types/api.types";
 
 export default function SessionDetailScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
+  const [showTimer, setShowTimer] = useState(false);
 
   const { data: session, isLoading } = useSession(sessionId);
   const updateSession = useUpdateSession(sessionId);
   const deleteSession = useDeleteSession();
   const updateSet = useUpdateSet(sessionId);
   const deleteSet = useDeleteSet(sessionId);
+  const startTimer = useTimerStore((s) => s.start);
 
   if (isLoading) return <SessionDetailSkeleton />;
 
@@ -51,6 +56,11 @@ export default function SessionDetailScreen() {
 
   const handleToggleSet = (set: WorkoutSet) => {
     updateSet.mutate({ setId: set.id, completed: !set.completed });
+    // Auto-start rest timer when marking a set as completed
+    if (!set.completed) {
+      startTimer();
+      setShowTimer(true);
+    }
   };
 
   const handleDeleteSet = (setId: string) => {
@@ -77,16 +87,32 @@ export default function SessionDetailScreen() {
       sections={sections}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
-        <SessionHeader
-          name={session.name}
-          startedAt={session.startedAt}
-          endedAt={session.endedAt}
-          notes={session.notes}
-          onFinish={handleFinish}
-          onDelete={handleDelete}
-          finishing={updateSession.isPending}
-          deleting={deleteSession.isPending}
-        />
+        <>
+          <SessionHeader
+            name={session.name}
+            startedAt={session.startedAt}
+            endedAt={session.endedAt}
+            notes={session.notes}
+            onFinish={handleFinish}
+            onDelete={handleDelete}
+            finishing={updateSession.isPending}
+            deleting={deleteSession.isPending}
+          />
+          {/* Rest timer toggle */}
+          <TouchableOpacity
+            style={styles.timerToggle}
+            onPress={() => setShowTimer((v) => !v)}
+          >
+            <Text style={styles.timerToggleText}>
+              ⏱ Temporizador de descanso {showTimer ? "▲" : "▼"}
+            </Text>
+          </TouchableOpacity>
+          {showTimer && (
+            <View style={{ marginBottom: spacing[3] }}>
+              <RestTimer />
+            </View>
+          )}
+        </>
       }
       renderSectionHeader={({ section }) => (
         <Text style={styles.exerciseName}>{section.title}</Text>
@@ -268,4 +294,17 @@ const styles = StyleSheet.create({
   setDetail: { fontSize: typography.sm, color: colors.textSecondary, marginTop: 1 },
   deleteSetText: { color: colors.gray3, fontSize: 16, fontWeight: typography.bold },
   noSets: { textAlign: "center", color: colors.textMuted, marginTop: 24, fontSize: typography.sm },
+
+  timerToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing[2],
+    marginBottom: spacing[2],
+    borderRadius: radius.sm,
+    backgroundColor: colors.bgInput,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  timerToggleText: { fontSize: typography.sm, color: colors.primary, fontWeight: typography.semibold },
 });

@@ -29,6 +29,15 @@ export default function WorkoutsScreen() {
         contentContainerStyle={styles.list}
         onRefresh={refetch}
         refreshing={isRefetching}
+        ListHeaderComponent={
+          <TouchableOpacity style={styles.analyticsCard} onPress={() => router.push("/analytics")} activeOpacity={0.8}>
+            <View>
+              <Text style={styles.analyticsTitle}>Análisis de entrenamiento</Text>
+              <Text style={styles.analyticsSubtitle}>Volumen, grupos musculares y tendencias</Text>
+            </View>
+            <Text style={styles.analyticsArrow}>›</Text>
+          </TouchableOpacity>
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>Sin sesiones aún</Text>
@@ -100,6 +109,21 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: typography.xs, fontWeight: typography.semibold },
   badgeTextDone: { color: colors.success },
   badgeTextActive: { color: "#92400E" },
+
+  analyticsCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing[4],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing[3],
+  },
+  analyticsTitle: { fontSize: typography.md, fontWeight: typography.semibold, color: colors.textPrimary },
+  analyticsSubtitle: { fontSize: typography.xs, color: colors.textSecondary, marginTop: 2 },
+  analyticsArrow: { fontSize: 22, color: colors.gray4 },
 
   emptyState: { alignItems: "center", marginTop: 80, gap: spacing[2] },
   emptyTitle: { fontSize: typography.md, fontWeight: typography.semibold, color: colors.textSecondary },

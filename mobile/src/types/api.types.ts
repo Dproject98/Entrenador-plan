@@ -169,3 +169,196 @@ export interface ApiListResponse<T> {
 export interface ApiError {
   error: { code: string; message: string; statusCode: number };
 }
+
+// ─── Social ──────────────────────────────────────────────────────────────────
+
+export type ChallengeType = "VOLUME_KG" | "SESSIONS_COUNT" | "STREAK_DAYS";
+export type ChallengeStatus = "active" | "upcoming" | "finished";
+
+export interface FeedPost {
+  id: string;
+  name?: string | null;
+  startedAt: string;
+  endedAt: string;
+  notes?: string | null;
+  user: { id: string; name: string };
+  setsCount: number;
+  likesCount: number;
+  commentsCount: number;
+  likedByMe: boolean;
+}
+
+export interface LeaderboardVolumeEntry {
+  rank: number;
+  userId: string;
+  name: string;
+  totalVolume: number;
+  sessionsCount: number;
+}
+
+export interface LeaderboardStreakEntry {
+  rank: number;
+  userId: string;
+  name: string;
+  streakDays: number;
+}
+
+export interface WorkoutComment {
+  id: string;
+  body: string;
+  createdAt: string;
+  user: { id: string; name: string };
+}
+
+// ─── Body Measurements ───────────────────────────────────────────────────────
+
+export interface BodyMeasurement {
+  id: string;
+  date: string;
+  weightKg?: number | null;
+  bodyFatPct?: number | null;
+  muscleMassPct?: number | null;
+  chestCm?: number | null;
+  waistCm?: number | null;
+  hipsCm?: number | null;
+  armCm?: number | null;
+  thighCm?: number | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateMeasurementBody {
+  date: string;
+  weightKg?: number;
+  bodyFatPct?: number;
+  muscleMassPct?: number;
+  chestCm?: number;
+  waistCm?: number;
+  hipsCm?: number;
+  armCm?: number;
+  thighCm?: number;
+  notes?: string;
+}
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+
+export type AnalyticsPeriod = "week" | "month" | "3months";
+
+export interface PersonalRecord {
+  exercise: Pick<Exercise, "id" | "name" | "muscleGroup">;
+  maxWeightKg: number;
+  maxWeightReps: number;
+  maxReps: number;
+  maxRepsWeight: number;
+  estimated1RM: number;
+  best1RMWeight: number;
+  best1RMReps: number;
+  achievedAt: string;
+  totalSets: number;
+}
+
+export interface ProgressionEntry {
+  date: string;
+  weightKg: number;
+  reps: number;
+  estimated1RM: number;
+}
+
+export interface ExerciseProgression {
+  exercise: Pick<Exercise, "id" | "name" | "muscleGroup">;
+  progression: ProgressionEntry[];
+}
+
+export interface MuscleGroupVolume {
+  muscleGroup: MuscleGroup;
+  volume: number;
+  sets: number;
+}
+
+export interface WeeklyTrendEntry {
+  week: string;
+  volume: number;
+  sessions: number;
+}
+
+export interface TrainingLoad {
+  period: AnalyticsPeriod;
+  totalVolume: number;
+  totalSets: number;
+  sessionsCount: number;
+  byMuscleGroup: MuscleGroupVolume[];
+  weeklyTrend: WeeklyTrendEntry[];
+}
+
+export interface MuscleDistributionEntry {
+  muscleGroup: MuscleGroup;
+  sets: number;
+  pct: number;
+}
+
+// ─── Cardio ──────────────────────────────────────────────────────────────────
+
+export type CardioType =
+  | "RUNNING" | "CYCLING" | "SWIMMING" | "ROWING"
+  | "ELLIPTICAL" | "WALKING" | "HIIT" | "OTHER";
+
+export interface CardioLog {
+  id: string;
+  date: string;
+  type: CardioType;
+  durationMin: number;
+  distanceKm?: number | null;
+  caloriesBurned?: number | null;
+  avgHeartRate?: number | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateCardioBody {
+  date: string;
+  type: CardioType;
+  durationMin: number;
+  distanceKm?: number;
+  caloriesBurned?: number;
+  avgHeartRate?: number;
+  notes?: string;
+}
+
+export interface CardioStats {
+  totalSessions: number;
+  totalMinutes: number;
+  totalDistanceKm: number;
+  totalCalories: number;
+  byType: Partial<Record<CardioType, number>>;
+}
+
+// ─── Goals & Streak ──────────────────────────────────────────────────────────
+
+export interface UserGoal {
+  weeklySessionsTarget: number;
+  weeklyVolumeKgTarget: number | null;
+}
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastSessionDate: string | null;
+  thisWeekSessions: number;
+  thisWeekDays: string[];
+}
+
+export interface Challenge {
+  id: string;
+  name: string;
+  description?: string | null;
+  type: ChallengeType;
+  goal: number;
+  startDate: string;
+  endDate: string;
+  isPublic: boolean;
+  status: ChallengeStatus;
+  creatorId: string;
+  creator: { id: string; name: string };
+  participantsCount: number;
+  joinedByMe: boolean;
+}

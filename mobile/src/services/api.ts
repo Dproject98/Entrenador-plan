@@ -2,6 +2,8 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from "axio
 import * as SecureStore from "expo-secure-store";
 import { useAuthStore, getStoredRefreshToken } from "@/store/auth.store";
 import type {
+  BodyMeasurement,
+  CreateMeasurementBody,
   AuthTokens,
   User,
   LoginBody,
@@ -24,6 +26,22 @@ import type {
   PlanWorkout,
   ApiResponse,
   ApiListResponse,
+  FeedPost,
+  LeaderboardVolumeEntry,
+  LeaderboardStreakEntry,
+  WorkoutComment,
+  Challenge,
+  ChallengeType,
+  TrainingLoad,
+  MuscleDistributionEntry,
+  AnalyticsPeriod,
+  PersonalRecord,
+  ExerciseProgression,
+  UserGoal,
+  StreakData,
+  CardioLog,
+  CreateCardioBody,
+  CardioStats,
 } from "@/types/api.types";
 
 // ─── Axios instance ──────────────────────────────────────────────────────────
@@ -193,7 +211,10 @@ export const foodsApi = {
   get: (id: string) =>
     http.get<ApiResponse<Food>>(`/foods/${id}`).then((r) => r.data.data),
 
-  update: (id: string, body: Partial<Parameters<typeof foodsApi.create>[0]>) =>
+  update: (id: string, body: Partial<{
+    name: string; brandName?: string; caloriesPer100g: number;
+    proteinPer100g: number; carbsPer100g: number; fatPer100g: number;
+  }>) =>
     http.patch<ApiResponse<Food>>(`/foods/${id}`, body).then((r) => r.data.data),
 
   delete: (id: string) =>
@@ -300,5 +321,148 @@ export const plansApi = {
         `/plans/${planId}/weeks/${weekId}/workouts/${workoutId}/exercises`,
         body
       )
+      .then((r) => r.data.data),
+};
+
+// ─── Measurements ─────────────────────────────────────────────────────────────
+
+export const measurementsApi = {
+  list: (params?: { page?: number; limit?: number; from?: string; to?: string }) =>
+    http
+      .get<ApiListResponse<BodyMeasurement>>("/measurements", { params })
+      .then((r) => r.data),
+
+  latest: () =>
+    http
+      .get<ApiResponse<BodyMeasurement | null>>("/measurements/latest")
+      .then((r) => r.data.data),
+
+  create: (body: CreateMeasurementBody) =>
+    http
+      .post<ApiResponse<BodyMeasurement>>("/measurements", body)
+      .then((r) => r.data.data),
+
+  delete: (id: string) =>
+    http.delete(`/measurements/${id}`),
+};
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+export const analyticsApi = {
+  trainingLoad: (period?: AnalyticsPeriod) =>
+    http
+      .get<ApiResponse<TrainingLoad>>("/analytics/training-load", { params: { period } })
+      .then((r) => r.data.data),
+
+  muscleBalance: () =>
+    http
+      .get<ApiResponse<MuscleDistributionEntry[]>>("/analytics/muscle-balance")
+      .then((r) => r.data.data),
+
+  personalRecords: () =>
+    http
+      .get<ApiResponse<PersonalRecord[]>>("/analytics/personal-records")
+      .then((r) => r.data.data),
+
+  exerciseProgression: (exerciseId: string, limit?: number) =>
+    http
+      .get<ApiResponse<ExerciseProgression>>(`/analytics/exercise-progression/${exerciseId}`, {
+        params: limit ? { limit } : undefined,
+      })
+      .then((r) => r.data.data),
+
+  streak: () =>
+    http.get<ApiResponse<StreakData>>("/analytics/streak").then((r) => r.data.data),
+};
+
+// ─── Goals ────────────────────────────────────────────────────────────────────
+
+export const goalsApi = {
+  get: () =>
+    http.get<ApiResponse<UserGoal>>("/goals").then((r) => r.data.data),
+
+  update: (body: Partial<UserGoal>) =>
+    http.put<ApiResponse<UserGoal>>("/goals", body).then((r) => r.data.data),
+};
+
+// ─── Cardio ───────────────────────────────────────────────────────────────────
+
+export const cardioApi = {
+  list: (params?: { page?: number; limit?: number; from?: string; to?: string }) =>
+    http.get<ApiListResponse<CardioLog>>("/cardio", { params }).then((r) => r.data),
+
+  create: (body: CreateCardioBody) =>
+    http.post<ApiResponse<CardioLog>>("/cardio", body).then((r) => r.data.data),
+
+  delete: (id: string) => http.delete(`/cardio/${id}`),
+
+  stats: () =>
+    http.get<ApiResponse<CardioStats>>("/cardio/stats").then((r) => r.data.data),
+};
+
+// ─── Social ───────────────────────────────────────────────────────────────────
+
+export const socialApi = {
+  // Feed
+  feed: () =>
+    http.get<{ data: FeedPost[] }>("/social/feed").then((r) => r.data.data),
+
+  // Follow / Unfollow
+  follow: (userId: string) =>
+    http.post(`/social/users/${userId}/follow`).then((r) => r.data),
+
+  unfollow: (userId: string) =>
+    http.delete(`/social/users/${userId}/follow`).then((r) => r.data),
+
+  // Likes
+  likeSession: (sessionId: string) =>
+    http.post(`/social/sessions/${sessionId}/like`).then((r) => r.data),
+
+  unlikeSession: (sessionId: string) =>
+    http.delete(`/social/sessions/${sessionId}/like`).then((r) => r.data),
+
+  // Comments
+  getComments: (sessionId: string) =>
+    http
+      .get<{ data: WorkoutComment[] }>(`/social/sessions/${sessionId}/comments`)
+      .then((r) => r.data.data),
+
+  addComment: (sessionId: string, body: string) =>
+    http
+      .post<{ data: WorkoutComment }>(`/social/sessions/${sessionId}/comments`, { body })
+      .then((r) => r.data.data),
+
+  deleteComment: (sessionId: string, commentId: string) =>
+    http.delete(`/social/sessions/${sessionId}/comments/${commentId}`),
+
+  // Challenges
+  challenges: () =>
+    http.get<{ data: Challenge[] }>("/social/challenges").then((r) => r.data.data),
+
+  createChallenge: (body: {
+    name: string;
+    description?: string;
+    type: ChallengeType;
+    goal?: number;
+    startDate: string;
+    endDate: string;
+    isPublic?: boolean;
+  }) =>
+    http.post<{ data: Challenge }>("/social/challenges", body).then((r) => r.data.data),
+
+  joinChallenge: (challengeId: string) =>
+    http.post(`/social/challenges/${challengeId}/join`).then((r) => r.data),
+
+  // Leaderboard
+  leaderboardVolume: (period?: "week" | "month" | "all") =>
+    http
+      .get<{ data: LeaderboardVolumeEntry[]; period: string }>("/social/leaderboard/volume", {
+        params: { period },
+      })
+      .then((r) => r.data),
+
+  leaderboardStreak: () =>
+    http
+      .get<{ data: LeaderboardStreakEntry[] }>("/social/leaderboard/streak")
       .then((r) => r.data.data),
 };

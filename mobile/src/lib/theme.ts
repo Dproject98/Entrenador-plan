@@ -3,42 +3,42 @@
 
 export const colors = {
   // Brand
-  primary: "#0066FF",
-  primaryLight: "#EBF3FF",
-  primaryDark: "#0044BB",
+  primary: "#3B82F6",
+  primaryLight: "#1E3A5F",
+  primaryDark: "#60A5FA",
 
   // Backgrounds
-  bg: "#F3F3F8",
-  bgCard: "#FFFFFF",
-  bgInput: "#FFFFFF",
+  bg: "#0A0A0F",
+  bgCard: "#16161E",
+  bgInput: "#1E1E2E",
 
   // Borders
-  border: "#E0E0E8",
-  borderFocus: "#0066FF",
+  border: "#2A2A3C",
+  borderFocus: "#3B82F6",
 
   // Text
-  textPrimary: "#141417",
-  textSecondary: "#6B6B8A",
-  textMuted: "#9999B0",
-  textInverted: "#FFFFFF",
+  textPrimary: "#E8E8F0",
+  textSecondary: "#8888A4",
+  textMuted: "#5C5C74",
+  textInverted: "#0A0A0F",
 
   // Semantic
-  success: "#16a34a",
-  successBg: "#F0FDF4",
-  danger: "#E53935",
-  dangerBg: "#FFF1F2",
-  warning: "#F59E0B",
-  warningBg: "#FFFBEB",
+  success: "#22C55E",
+  successBg: "#0D2818",
+  danger: "#EF4444",
+  dangerBg: "#2D1114",
+  warning: "#FBBF24",
+  warningBg: "#2D2410",
 
-  // Gray scale (Bluesky palette)
-  gray1: "#F3F3F8",
-  gray2: "#E8E8F0",
-  gray3: "#D4D4E0",
-  gray4: "#ABABC4",
-  gray5: "#7C7C96",
-  gray6: "#4F4F67",
-  gray7: "#2E2E45",
-  gray8: "#141417",
+  // Gray scale (dark palette)
+  gray1: "#0A0A0F",
+  gray2: "#1E1E2E",
+  gray3: "#2A2A3C",
+  gray4: "#4A4A64",
+  gray5: "#5C5C74",
+  gray6: "#8888A4",
+  gray7: "#B0B0C4",
+  gray8: "#E8E8F0",
 } as const;
 
 export const typography = {

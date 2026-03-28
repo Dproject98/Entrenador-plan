@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import fp from "fastify-plugin";
 import { authenticate } from "../../hooks/authenticate.js";
 import { listPlansHandler } from "./plans-list.js";
 import { createPlanHandler } from "./plans-create.js";
@@ -40,4 +39,4 @@ async function planRoutes(fastify: FastifyInstance): Promise<void> {
   );
 }
 
-export default fp(planRoutes, { name: "plan-routes" });
+export default planRoutes;

@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useSessions } from "@/hooks/useWorkouts";
 import { useNutritionSummary } from "@/hooks/useNutrition";
 import { useLogout } from "@/hooks/useAuth";
+import { useStreak, useGoal } from "@/hooks/useGoals";
 import { colors, typography, radius, spacing } from "@/lib/theme";
 
 function toLocalDateString(d = new Date()) {
@@ -17,6 +18,8 @@ export default function DashboardScreen() {
 
   const { data: sessions, isLoading: sessionsLoading } = useSessions({ limit: 3 });
   const { data: summary } = useNutritionSummary(today);
+  const { data: streak } = useStreak();
+  const { data: goal } = useGoal();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -36,6 +39,40 @@ export default function DashboardScreen() {
           <Text style={styles.logoutText}>{logout.isPending ? "..." : "Salir"}</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Streak + weekly goal */}
+      {streak && (
+        <TouchableOpacity style={styles.streakCard} onPress={() => router.push("/goals")} activeOpacity={0.8}>
+          <View style={styles.streakLeft}>
+            <Text style={styles.streakFire}>🔥</Text>
+            <View>
+              <Text style={styles.streakCount}>{streak.currentStreak} {streak.currentStreak === 1 ? "día" : "días"}</Text>
+              <Text style={styles.streakLabel}>racha actual</Text>
+            </View>
+          </View>
+          <View style={styles.weekDots}>
+            {["L", "M", "X", "J", "V", "S", "D"].map((dayLabel, i) => {
+              const now = new Date();
+              const dow = now.getDay(); // 0=Sun
+              const mondayIdx = dow === 0 ? -6 : 1 - dow;
+              const d = new Date(now);
+              d.setDate(now.getDate() + mondayIdx + i);
+              const dateStr = d.toISOString().split("T")[0];
+              const done = streak.thisWeekDays.includes(dateStr);
+              const isToday = dateStr === today;
+              return (
+                <View key={dayLabel} style={styles.weekDotWrap}>
+                  <View style={[styles.weekDot, done && styles.weekDotDone, isToday && !done && styles.weekDotToday]} />
+                  <Text style={[styles.weekDotLabel, isToday && styles.weekDotLabelToday]}>{dayLabel}</Text>
+                </View>
+              );
+            })}
+          </View>
+          {goal && (
+            <Text style={styles.goalText}>{streak.thisWeekSessions}/{goal.weeklySessionsTarget}</Text>
+          )}
+        </TouchableOpacity>
+      )}
 
       {/* Macro summary */}
       <View style={styles.card}>
@@ -90,6 +127,24 @@ export default function DashboardScreen() {
         )}
       </View>
 
+      {/* Cardio */}
+      <TouchableOpacity style={styles.progressCard} onPress={() => router.push("/cardio")} activeOpacity={0.8}>
+        <View>
+          <Text style={styles.progressTitle}>Cardio</Text>
+          <Text style={styles.progressSubtitle}>Carrera, ciclismo, natación y más</Text>
+        </View>
+        <Text style={styles.progressArrow}>›</Text>
+      </TouchableOpacity>
+
+      {/* Progress */}
+      <TouchableOpacity style={styles.progressCard} onPress={() => router.push("/progress")} activeOpacity={0.8}>
+        <View>
+          <Text style={styles.progressTitle}>Mi Progreso</Text>
+          <Text style={styles.progressSubtitle}>Peso, medidas y evolución corporal</Text>
+        </View>
+        <Text style={styles.progressArrow}>›</Text>
+      </TouchableOpacity>
+
       {/* CTA */}
       <TouchableOpacity style={styles.cta} onPress={() => router.push("/workout/log")} activeOpacity={0.8}>
         <Text style={styles.ctaText}>+ Nuevo entrenamiento</Text>
@@ -139,6 +194,29 @@ const styles = StyleSheet.create({
   },
   logoutText: { fontSize: typography.sm, color: colors.textSecondary },
 
+  streakCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing[3],
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing[3],
+  },
+  streakLeft: { flexDirection: "row", alignItems: "center", gap: spacing[2], minWidth: 80 },
+  streakFire: { fontSize: 24 },
+  streakCount: { fontSize: typography.lg, fontWeight: typography.bold, color: colors.textPrimary },
+  streakLabel: { fontSize: typography.xs, color: colors.textMuted },
+  weekDots: { flex: 1, flexDirection: "row", justifyContent: "space-between" },
+  weekDotWrap: { alignItems: "center", gap: 3 },
+  weekDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.bgInput, borderWidth: 1, borderColor: colors.border },
+  weekDotDone: { backgroundColor: colors.primary, borderColor: colors.primary },
+  weekDotToday: { borderColor: colors.primary },
+  weekDotLabel: { fontSize: 9, color: colors.textMuted },
+  weekDotLabelToday: { color: colors.primary },
+  goalText: { fontSize: typography.sm, fontWeight: typography.bold, color: colors.textSecondary, minWidth: 28, textAlign: "right" },
+
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
@@ -180,6 +258,21 @@ const styles = StyleSheet.create({
   rowArrow: { fontSize: 20, color: colors.gray4 },
 
   emptyText: { fontSize: typography.sm, color: colors.textMuted, textAlign: "center", paddingVertical: spacing[2] },
+
+  progressCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[4],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  progressTitle: { fontSize: typography.md, fontWeight: typography.semibold, color: colors.textPrimary },
+  progressSubtitle: { fontSize: typography.xs, color: colors.textSecondary, marginTop: 2 },
+  progressArrow: { fontSize: 22, color: colors.gray4 },
 
   cta: {
     backgroundColor: colors.primary,

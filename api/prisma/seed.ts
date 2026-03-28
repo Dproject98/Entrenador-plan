@@ -92,6 +92,54 @@ const exercises: Array<{
   { name: "Stair Climber", muscleGroup: MuscleGroup.CARDIO, equipment: Equipment.MACHINE },
 ];
 
+const foods: Array<{
+  name: string;
+  brandName?: string;
+  caloriesPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+}> = [
+  // ---- PROTEÍNAS ----
+  { name: "Pechuga de pollo (cocida)", caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+  { name: "Pechuga de pavo (cocida)", caloriesPer100g: 135, proteinPer100g: 29, carbsPer100g: 0, fatPer100g: 1.8 },
+  { name: "Carne picada 90% (cocida)", caloriesPer100g: 215, proteinPer100g: 26, carbsPer100g: 0, fatPer100g: 12 },
+  { name: "Salmón (cocinado)", caloriesPer100g: 208, proteinPer100g: 20, carbsPer100g: 0, fatPer100g: 13 },
+  { name: "Atún en agua (lata)", caloriesPer100g: 116, proteinPer100g: 26, carbsPer100g: 0, fatPer100g: 1 },
+  { name: "Huevo entero", caloriesPer100g: 155, proteinPer100g: 13, carbsPer100g: 1.1, fatPer100g: 11 },
+  { name: "Clara de huevo", caloriesPer100g: 52, proteinPer100g: 11, carbsPer100g: 0.7, fatPer100g: 0.2 },
+  { name: "Queso cottage 0%", caloriesPer100g: 72, proteinPer100g: 12, carbsPer100g: 3.4, fatPer100g: 0.3 },
+  { name: "Yogur griego 0%", caloriesPer100g: 59, proteinPer100g: 10, carbsPer100g: 3.6, fatPer100g: 0.4 },
+  { name: "Proteína whey (polvo)", caloriesPer100g: 380, proteinPer100g: 80, carbsPer100g: 6, fatPer100g: 4 },
+
+  // ---- CARBOHIDRATOS ----
+  { name: "Arroz blanco (cocido)", caloriesPer100g: 130, proteinPer100g: 2.7, carbsPer100g: 28, fatPer100g: 0.3 },
+  { name: "Arroz integral (cocido)", caloriesPer100g: 111, proteinPer100g: 2.6, carbsPer100g: 23, fatPer100g: 0.9 },
+  { name: "Avena (cruda)", caloriesPer100g: 389, proteinPer100g: 17, carbsPer100g: 66, fatPer100g: 7 },
+  { name: "Patata (cocida)", caloriesPer100g: 87, proteinPer100g: 1.9, carbsPer100g: 20, fatPer100g: 0.1 },
+  { name: "Boniato (cocido)", caloriesPer100g: 90, proteinPer100g: 2, carbsPer100g: 21, fatPer100g: 0.1 },
+  { name: "Pan de centeno", caloriesPer100g: 259, proteinPer100g: 9, carbsPer100g: 48, fatPer100g: 3.3 },
+  { name: "Pasta integral (cocida)", caloriesPer100g: 124, proteinPer100g: 5.3, carbsPer100g: 23, fatPer100g: 1.1 },
+  { name: "Quinoa (cocida)", caloriesPer100g: 120, proteinPer100g: 4.4, carbsPer100g: 21, fatPer100g: 1.9 },
+
+  // ---- GRASAS ----
+  { name: "Aguacate", caloriesPer100g: 160, proteinPer100g: 2, carbsPer100g: 9, fatPer100g: 15 },
+  { name: "Aceite de oliva", caloriesPer100g: 884, proteinPer100g: 0, carbsPer100g: 0, fatPer100g: 100 },
+  { name: "Almendras", caloriesPer100g: 579, proteinPer100g: 21, carbsPer100g: 22, fatPer100g: 50 },
+  { name: "Mantequilla de cacahuete natural", caloriesPer100g: 598, proteinPer100g: 25, carbsPer100g: 20, fatPer100g: 50 },
+
+  // ---- LÁCTEOS ----
+  { name: "Leche semidesnatada", caloriesPer100g: 46, proteinPer100g: 3.4, carbsPer100g: 4.8, fatPer100g: 1.6 },
+  { name: "Queso mozzarella", caloriesPer100g: 280, proteinPer100g: 28, carbsPer100g: 2.2, fatPer100g: 17 },
+
+  // ---- FRUTAS Y VERDURAS ----
+  { name: "Plátano", caloriesPer100g: 89, proteinPer100g: 1.1, carbsPer100g: 23, fatPer100g: 0.3 },
+  { name: "Manzana", caloriesPer100g: 52, proteinPer100g: 0.3, carbsPer100g: 14, fatPer100g: 0.2 },
+  { name: "Brócoli (cocido)", caloriesPer100g: 35, proteinPer100g: 2.4, carbsPer100g: 7.2, fatPer100g: 0.4 },
+  { name: "Espinacas (crudas)", caloriesPer100g: 23, proteinPer100g: 2.9, carbsPer100g: 3.6, fatPer100g: 0.4 },
+  { name: "Lentejas (cocidas)", caloriesPer100g: 116, proteinPer100g: 9, carbsPer100g: 20, fatPer100g: 0.4 },
+];
+
 async function main(): Promise<void> {
   console.log("Seeding exercise library...");
 
@@ -108,6 +156,32 @@ async function main(): Promise<void> {
   }
 
   console.log(`Seeded ${exercises.length} exercises.`);
+
+  console.log("Seeding food library...");
+
+  for (const food of foods) {
+    await prisma.food.upsert({
+      where: { id: `seed_${food.name.replace(/\s+/g, "_").toLowerCase()}` },
+      update: {
+        caloriesPer100g: food.caloriesPer100g,
+        proteinPer100g: food.proteinPer100g,
+        carbsPer100g: food.carbsPer100g,
+        fatPer100g: food.fatPer100g,
+      },
+      create: {
+        id: `seed_${food.name.replace(/\s+/g, "_").toLowerCase()}`,
+        name: food.name,
+        brandName: food.brandName ?? null,
+        caloriesPer100g: food.caloriesPer100g,
+        proteinPer100g: food.proteinPer100g,
+        carbsPer100g: food.carbsPer100g,
+        fatPer100g: food.fatPer100g,
+        isPrivate: false,
+      },
+    });
+  }
+
+  console.log(`Seeded ${foods.length} foods.`);
 }
 
 main()

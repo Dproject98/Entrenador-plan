@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import fp from "fastify-plugin";
 import { authenticate } from "../../hooks/authenticate.js";
 import { listSessionsHandler } from "./sessions-list.js";
 import { createSessionHandler } from "./sessions-create.js";
@@ -26,4 +25,4 @@ async function workoutRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.delete("/sessions/:id/sets/:setId", auth, deleteSetHandler);
 }
 
-export default fp(workoutRoutes, { name: "workout-routes" });
+export default workoutRoutes;

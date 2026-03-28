@@ -11,7 +11,7 @@ export function useLogin() {
     mutationFn: (body: LoginBody) => authApi.login(body),
     onSuccess: async (data) => {
       await setAuth(data.user, data.accessToken, data.refreshToken);
-      router.replace("/(tabs)/");
+      router.replace("/(tabs)");
     },
   });
 }
@@ -23,7 +23,7 @@ export function useRegister() {
     mutationFn: (body: RegisterBody) => authApi.register(body),
     onSuccess: async (data) => {
       await setAuth(data.user, data.accessToken, data.refreshToken);
-      router.replace("/(tabs)/");
+      router.replace("/(tabs)");
     },
   });
 }

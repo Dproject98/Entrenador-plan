@@ -72,7 +72,32 @@ export function useAddSet(sessionId: string) {
         notes?: string;
       }
     ) => setsApi.create(sessionId, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) }),
+    onMutate: async (body) => {
+      await qc.cancelQueries({ queryKey: sessionKeys.detail(sessionId) });
+      const prev = qc.getQueryData(sessionKeys.detail(sessionId));
+      // Optimistically append a temp set so the UI responds immediately
+      qc.setQueryData(sessionKeys.detail(sessionId), (old: any) => {
+        if (!old) return old;
+        const tempSet: WorkoutSet = {
+          id: `temp-${Date.now()}`,
+          setNumber: body.setNumber,
+          reps: body.reps ?? null,
+          weightKg: body.weightKg ?? null,
+          rpe: body.rpe ?? null,
+          completed: body.completed ?? false,
+          notes: body.notes ?? null,
+          exercise: old.sets.find((s: WorkoutSet) => s.exercise.id === body.exerciseId)?.exercise ?? {
+            id: body.exerciseId, name: "...", muscleGroup: "FULL_BODY", equipment: "OTHER",
+          },
+        };
+        return { ...old, sets: [...old.sets, tempSet] };
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(sessionKeys.detail(sessionId), ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) }),
   });
 }
 
@@ -116,6 +141,18 @@ export function useDeleteSet(sessionId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (setId: string) => setsApi.delete(sessionId, setId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) }),
+    onMutate: async (setId) => {
+      await qc.cancelQueries({ queryKey: sessionKeys.detail(sessionId) });
+      const prev = qc.getQueryData(sessionKeys.detail(sessionId));
+      qc.setQueryData(sessionKeys.detail(sessionId), (old: any) => {
+        if (!old) return old;
+        return { ...old, sets: old.sets.filter((s: WorkoutSet) => s.id !== setId) };
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(sessionKeys.detail(sessionId), ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) }),
   });
 }

@@ -71,6 +71,14 @@ export function useCreateWeek(planId: string) {
   });
 }
 
+export function useDeleteWeek(planId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (weekId: string) => plansApi.deleteWeek(planId, weekId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.detail(planId) }),
+  });
+}
+
 export function useCreatePlanWorkout(planId: string, weekId: string) {
   const qc = useQueryClient();
   return useMutation({

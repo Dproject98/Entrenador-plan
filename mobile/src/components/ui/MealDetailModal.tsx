@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -12,7 +13,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useMealDetail, useFoods, useAddEntry, useDeleteEntry } from "@/hooks/useNutrition";
+import { useMealDetail, useFoods, useAddEntry, useDeleteEntry, useCreateFood } from "@/hooks/useNutrition";
 import { colors, typography, radius, spacing } from "@/lib/theme";
 import type { MealType, Food, MealEntry } from "@/types/api.types";
 
@@ -41,16 +42,19 @@ export function MealDetailModal({ visible, mealId, mealType, date, onClose }: Pr
   const [search, setSearch] = useState("");
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("");
+  const [showCreateFood, setShowCreateFood] = useState(false);
 
   const { data: meal, isLoading } = useMealDetail(mealId);
   const { data: foodResults, isLoading: searchLoading } = useFoods(search);
   const addEntry = useAddEntry(mealId, date);
   const deleteEntry = useDeleteEntry(mealId, date);
+  const createFood = useCreateFood();
 
   const handleSelectFood = (food: Food) => {
     setSelectedFood(food);
     setQuantity("100");
     setSearch("");
+    setShowCreateFood(false);
   };
 
   const handleAddEntry = () => {
@@ -89,6 +93,13 @@ export function MealDetailModal({ visible, mealId, mealType, date, onClose }: Pr
   });
 
   return (
+    <>
+    <CreateFoodModal
+      visible={showCreateFood}
+      initialName={search}
+      onClose={() => setShowCreateFood(false)}
+      onCreated={handleSelectFood}
+    />
     <Modal
       visible={visible}
       animationType="slide"
@@ -195,7 +206,16 @@ export function MealDetailModal({ visible, mealId, mealType, date, onClose }: Pr
               {searchLoading ? (
                 <ActivityIndicator color={colors.primary} size="small" style={{ padding: 12 }} />
               ) : (foodResults?.data ?? []).length === 0 ? (
-                <Text style={styles.noResults}>Sin resultados</Text>
+                <View>
+                  <Text style={styles.noResults}>Sin resultados</Text>
+                  <TouchableOpacity
+                    style={styles.createFoodBtn}
+                    onPress={() => { setShowCreateFood(true); setSearch(""); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.createFoodBtnText}>+ Crear "{search}"</Text>
+                  </TouchableOpacity>
+                </View>
               ) : (
                 (foodResults?.data ?? []).slice(0, 6).map((food) => (
                   <TouchableOpacity
@@ -247,6 +267,7 @@ export function MealDetailModal({ visible, mealId, mealType, date, onClose }: Pr
         </View>
       </KeyboardAvoidingView>
     </Modal>
+    </>
   );
 }
 
@@ -256,6 +277,147 @@ function MacroChip({ label, value, color }: { label: string; value: string; colo
       <Text style={[styles.macroChipValue, { color }]}>{value}</Text>
       <Text style={styles.macroChipLabel}>{label}</Text>
     </View>
+  );
+}
+
+// ─── Create Food Modal ────────────────────────────────────────────────────────
+
+interface CreateFoodModalProps {
+  visible: boolean;
+  initialName?: string;
+  onClose: () => void;
+  onCreated: (food: Food) => void;
+}
+
+export function CreateFoodModal({ visible, initialName = "", onClose, onCreated }: CreateFoodModalProps) {
+  const [name, setName] = useState(initialName);
+  const [brand, setBrand] = useState("");
+  const [calories, setCalories] = useState("");
+  const [protein, setProtein] = useState("");
+  const [carbs, setCarbs] = useState("");
+  const [fat, setFat] = useState("");
+
+  const createFood = useCreateFood();
+
+  const handleCreate = () => {
+    if (!name.trim() || !calories) return;
+    createFood.mutate(
+      {
+        name: name.trim(),
+        brandName: brand.trim() || undefined,
+        caloriesPer100g: parseFloat(calories),
+        proteinPer100g: parseFloat(protein) || 0,
+        carbsPer100g: parseFloat(carbs) || 0,
+        fatPer100g: parseFloat(fat) || 0,
+      },
+      {
+        onSuccess: (food) => {
+          setName("");
+          setBrand("");
+          setCalories("");
+          setProtein("");
+          setCarbs("");
+          setFat("");
+          onCreated(food);
+        },
+        onError: () => Alert.alert("Error", "No se pudo crear el alimento"),
+      }
+    );
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="formSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Nuevo alimento</Text>
+          <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.closeBtn}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.createFoodBody} keyboardShouldPersistTaps="handled">
+          <Text style={styles.createFoodLabel}>Nombre *</Text>
+          <TextInput
+            style={styles.createFoodInput}
+            value={name}
+            onChangeText={setName}
+            placeholder="Ej: Pechuga de pollo"
+            placeholderTextColor={colors.textMuted}
+            autoFocus
+          />
+
+          <Text style={styles.createFoodLabel}>Marca (opcional)</Text>
+          <TextInput
+            style={styles.createFoodInput}
+            value={brand}
+            onChangeText={setBrand}
+            placeholder="Ej: Mercadona"
+            placeholderTextColor={colors.textMuted}
+          />
+
+          <Text style={[styles.createFoodLabel, { marginTop: spacing[2] }]}>
+            Valores por 100g *
+          </Text>
+          <View style={styles.macroInputRow}>
+            <View style={styles.macroInputBlock}>
+              <Text style={styles.macroInputLabel}>Calorías</Text>
+              <TextInput
+                style={styles.macroInput}
+                value={calories}
+                onChangeText={setCalories}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+            <View style={styles.macroInputBlock}>
+              <Text style={styles.macroInputLabel}>Proteína (g)</Text>
+              <TextInput
+                style={styles.macroInput}
+                value={protein}
+                onChangeText={setProtein}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+            <View style={styles.macroInputBlock}>
+              <Text style={styles.macroInputLabel}>Carbs (g)</Text>
+              <TextInput
+                style={styles.macroInput}
+                value={carbs}
+                onChangeText={setCarbs}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+            <View style={styles.macroInputBlock}>
+              <Text style={styles.macroInputLabel}>Grasas (g)</Text>
+              <TextInput
+                style={styles.macroInput}
+                value={fat}
+                onChangeText={setFat}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.addBtn, (!name.trim() || !calories || createFood.isPending) && styles.btnDisabled]}
+            onPress={handleCreate}
+            disabled={!name.trim() || !calories || createFood.isPending}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.addBtnText}>
+              {createFood.isPending ? "Creando..." : "Crear alimento"}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -431,4 +593,55 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { opacity: 0.55 },
   addBtnText: { color: "#fff", fontSize: typography.sm, fontWeight: typography.bold },
+
+  // Create food option
+  createFoodBtn: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2] + 2,
+    alignItems: "center",
+  },
+  createFoodBtnText: { fontSize: typography.sm, color: colors.primary, fontWeight: typography.semibold },
+
+  // Create food form
+  createFoodBody: { padding: spacing[4], gap: spacing[2] },
+  createFoodLabel: {
+    fontSize: typography.xs,
+    color: colors.textSecondary,
+    fontWeight: typography.semibold,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: spacing[1],
+  },
+  createFoodInput: {
+    backgroundColor: colors.bgInput,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.textPrimary,
+    fontSize: typography.md,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2] + 2,
+  },
+  macroInputRow: { flexDirection: "row", gap: spacing[2] },
+  macroInputBlock: { flex: 1, gap: spacing[1] },
+  macroInputLabel: {
+    fontSize: typography.xs,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    textAlign: "center",
+  },
+  macroInput: {
+    backgroundColor: colors.bgInput,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.textPrimary,
+    fontSize: typography.md,
+    fontWeight: typography.semibold,
+    textAlign: "center",
+    paddingVertical: spacing[2] + 2,
+  },
 });

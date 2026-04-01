@@ -283,6 +283,9 @@ export const plansApi = {
     http.post<ApiResponse<TrainingPlan>>(`/plans/${id}/activate`).then((r) => r.data.data),
 
   // Weeks
+  deleteWeek: (planId: string, weekId: string) =>
+    http.delete(`/plans/${planId}/weeks/${weekId}`),
+
   createWeek: (planId: string, weekNumber: number) =>
     http
       .post<ApiResponse<PlanWeek>>(`/plans/${planId}/weeks`, { weekNumber })

@@ -7,6 +7,7 @@ import { updatePlanHandler } from "./plans-update.js";
 import { deletePlanHandler } from "./plans-delete.js";
 import { activatePlanHandler } from "./plans-activate.js";
 import { createWeekHandler } from "./weeks-create.js";
+import { deleteWeekHandler } from "./weeks-delete.js";
 import { createWorkoutHandler } from "./workouts-create.js";
 import { updateWorkoutHandler } from "./workouts-update.js";
 import { deleteWorkoutHandler } from "./workouts-delete.js";
@@ -26,6 +27,7 @@ async function planRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Weeks
   fastify.post("/plans/:id/weeks", auth, createWeekHandler);
+  fastify.delete("/plans/:id/weeks/:weekId", auth, deleteWeekHandler);
 
   // Workouts (nested under week)
   fastify.post("/plans/:id/weeks/:weekId/workouts", auth, createWorkoutHandler);

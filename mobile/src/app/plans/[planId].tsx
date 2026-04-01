@@ -17,6 +17,7 @@ import { useLocalSearchParams } from "expo-router";
 import {
   usePlan,
   useCreateWeek,
+  useDeleteWeek,
   useCreatePlanWorkout,
   useCreatePlannedExercise,
   useDeletePlannedExercise,
@@ -166,7 +167,23 @@ function WeekSection({
   onAddExercise: (workout: PlanWorkout) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const deleteWeek = useDeleteWeek(planId);
   const deleteWorkout = useDeletePlanWorkout(planId, week.id);
+
+  const handleDeleteWeek = () => {
+    Alert.alert(
+      "Eliminar semana",
+      `¿Eliminar la Semana ${week.weekNumber} y todos sus entrenamientos?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: () => deleteWeek.mutate(week.id),
+        },
+      ]
+    );
+  };
 
   const handleDeleteWorkout = (workout: PlanWorkout) => {
     Alert.alert(
@@ -195,6 +212,13 @@ function WeekSection({
           <Text style={styles.weekMeta}>
             {week.workouts.length} entreno{week.workouts.length !== 1 ? "s" : ""}
           </Text>
+          <TouchableOpacity
+            onPress={(e) => { e.stopPropagation?.(); handleDeleteWeek(); }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ marginRight: spacing[2] }}
+          >
+            <Text style={styles.deleteWeekBtn}>🗑</Text>
+          </TouchableOpacity>
           <Text style={styles.weekChevron}>{expanded ? "▲" : "▼"}</Text>
         </View>
       </TouchableOpacity>
@@ -787,6 +811,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 
+  deleteWeekBtn: { fontSize: 14, color: colors.gray4 },
   deleteWorkoutBtn: {
     fontSize: 14,
     color: colors.gray4,

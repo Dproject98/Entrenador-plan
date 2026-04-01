@@ -35,9 +35,13 @@ export const updatePlanHandler: RouteHandler = async (
     return;
   }
 
+  const updateData: { name?: string; description?: string | null } = {};
+  if (body.data.name !== undefined) updateData.name = body.data.name;
+  if (body.data.description !== undefined) updateData.description = body.data.description ?? null;
+
   const plan = await request.server.prisma.trainingPlan.update({
     where: { id },
-    data: body.data,
+    data: updateData,
     select: {
       id: true,
       name: true,

@@ -27,3 +27,14 @@ export default fp(jwtPlugin, {
   name: "jwt",
   fastify: "5.x",
 });
+
+declare module "fastify" {
+  interface FastifyRequest {
+    accessVerify(): Promise<{ sub: string }>;
+    refreshVerify(): Promise<{ sub: string }>;
+  }
+  interface FastifyInstance {
+    accessSign(payload: { sub: string }): string;
+    refreshSign(payload: { sub: string }): string;
+  }
+}

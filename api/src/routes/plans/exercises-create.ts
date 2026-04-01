@@ -55,7 +55,15 @@ export const createPlannedExerciseHandler: RouteHandler = async (
   }
 
   const planned = await request.server.prisma.plannedExercise.create({
-    data: { planWorkoutId: workoutId, ...body.data },
+    data: {
+      planWorkoutId: workoutId,
+      exerciseId: body.data.exerciseId,
+      sets: body.data.sets,
+      reps: body.data.reps,
+      orderIndex: body.data.orderIndex,
+      restSeconds: body.data.restSeconds ?? null,
+      notes: body.data.notes ?? null,
+    },
     select: {
       id: true,
       sets: true,

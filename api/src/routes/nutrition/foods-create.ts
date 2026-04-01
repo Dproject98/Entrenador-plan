@@ -25,7 +25,12 @@ export const createFoodHandler: RouteHandler = async (
 
   const food = await request.server.prisma.food.create({
     data: {
-      ...body.data,
+      name: body.data.name,
+      brandName: body.data.brandName ?? null,
+      caloriesPer100g: body.data.caloriesPer100g,
+      proteinPer100g: body.data.proteinPer100g,
+      carbsPer100g: body.data.carbsPer100g,
+      fatPer100g: body.data.fatPer100g,
       isPrivate: true,
       userId,
     },

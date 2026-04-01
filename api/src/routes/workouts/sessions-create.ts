@@ -23,9 +23,9 @@ export const createSessionHandler: RouteHandler = async (
   const session = await request.server.prisma.workoutSession.create({
     data: {
       userId,
-      name: body.data.name,
-      planWorkoutId: body.data.planWorkoutId,
-      notes: body.data.notes,
+      name: body.data.name ?? null,
+      planWorkoutId: body.data.planWorkoutId ?? null,
+      notes: body.data.notes ?? null,
     },
     select: {
       id: true,

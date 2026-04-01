@@ -39,9 +39,17 @@ export const updateFoodHandler: RouteHandler = async (
     return;
   }
 
+  const data: Record<string, unknown> = {};
+  if (body.data.name !== undefined) data.name = body.data.name;
+  if (body.data.brandName !== undefined) data.brandName = body.data.brandName ?? null;
+  if (body.data.caloriesPer100g !== undefined) data.caloriesPer100g = body.data.caloriesPer100g;
+  if (body.data.proteinPer100g !== undefined) data.proteinPer100g = body.data.proteinPer100g;
+  if (body.data.carbsPer100g !== undefined) data.carbsPer100g = body.data.carbsPer100g;
+  if (body.data.fatPer100g !== undefined) data.fatPer100g = body.data.fatPer100g;
+
   const food = await request.server.prisma.food.update({
     where: { id },
-    data: body.data,
+    data,
     select: {
       id: true,
       name: true,

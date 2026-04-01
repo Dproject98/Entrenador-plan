@@ -49,9 +49,20 @@ export const updateSetHandler: RouteHandler = async (
     return;
   }
 
+  const { reps, weightKg, rpe, completed, notes } = body.data;
+  const setUpdateData: {
+    reps?: number | null; weightKg?: number | null; rpe?: number | null;
+    completed?: boolean; notes?: string | null;
+  } = {};
+  if (reps !== undefined) setUpdateData.reps = reps ?? null;
+  if (weightKg !== undefined) setUpdateData.weightKg = weightKg ?? null;
+  if (rpe !== undefined) setUpdateData.rpe = rpe ?? null;
+  if (completed !== undefined) setUpdateData.completed = completed;
+  if (notes !== undefined) setUpdateData.notes = notes ?? null;
+
   const set = await request.server.prisma.workoutSet.update({
     where: { id: setId },
-    data: body.data,
+    data: setUpdateData,
     select: {
       id: true,
       setNumber: true,

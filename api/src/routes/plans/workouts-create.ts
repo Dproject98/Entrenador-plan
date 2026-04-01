@@ -37,7 +37,7 @@ export const createWorkoutHandler: RouteHandler = async (
   }
 
   const workout = await request.server.prisma.planWorkout.create({
-    data: { planWeekId: weekId, dayOfWeek: body.data.dayOfWeek, name: body.data.name },
+    data: { planWeekId: weekId, dayOfWeek: body.data.dayOfWeek, name: body.data.name ?? null },
     select: {
       id: true,
       dayOfWeek: true,

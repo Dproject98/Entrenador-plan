@@ -20,7 +20,7 @@ export const createPlanHandler: RouteHandler = async (
   const userId = (request.user as { sub: string }).sub;
 
   const plan = await request.server.prisma.trainingPlan.create({
-    data: { userId, ...body.data },
+    data: { userId, name: body.data.name, description: body.data.description ?? null },
     select: {
       id: true,
       name: true,

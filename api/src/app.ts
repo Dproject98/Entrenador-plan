@@ -46,11 +46,12 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // --- Global error handler ---
   fastify.setErrorHandler(async (error, request, reply) => {
-    if (error.validation) {
+    const err = error as { validation?: unknown; statusCode?: number; message?: string };
+    if (err.validation) {
       reply.status(400).send({
         error: {
           code: "VALIDATION_ERROR",
-          message: error.message,
+          message: err.message ?? "Validation error",
           statusCode: 400,
         },
       });
@@ -59,14 +60,14 @@ export async function buildApp(): Promise<FastifyInstance> {
 
     request.log.error({ err: error }, "Unhandled error");
 
-    reply.status(error.statusCode ?? 500).send({
+    reply.status(err.statusCode ?? 500).send({
       error: {
         code: "INTERNAL_ERROR",
         message:
           config.NODE_ENV === "production"
             ? "Internal server error"
-            : error.message,
-        statusCode: error.statusCode ?? 500,
+            : (err.message ?? "Internal server error"),
+        statusCode: err.statusCode ?? 500,
       },
     });
   });

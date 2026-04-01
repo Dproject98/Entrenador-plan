@@ -43,7 +43,7 @@ export async function exerciseProgressionHandler(
   >();
 
   for (const set of sets) {
-    const day = set.session.startedAt.toISOString().split("T")[0];
+    const day = set.session.startedAt.toISOString().split("T")[0]!;
     const orm = epley1RM(set.weightKg!, set.reps!);
     const existing = dayMap.get(day);
     if (!existing || orm > existing.estimated1RM) {

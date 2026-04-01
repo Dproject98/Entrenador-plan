@@ -117,10 +117,10 @@ async function statsHandler(request: FastifyRequest, reply: FastifyReply) {
 // ─── Register ─────────────────────────────────────────────────────────────────
 
 async function cardioRoutes(fastify: FastifyInstance): Promise<void> {
+  fastify.get("/stats", auth, h(statsHandler));   // must be before /:id
   fastify.get("/", auth, h(listHandler));
   fastify.post("/", auth, h(createHandler));
   fastify.delete("/:id", auth, h(deleteHandler));
-  fastify.get("/stats", auth, h(statsHandler));
 }
 
 export default cardioRoutes;

@@ -39,9 +39,13 @@ export const updateWorkoutHandler: RouteHandler = async (
     return;
   }
 
+  const updateData: { dayOfWeek?: number; name?: string | null } = {};
+  if (body.data.dayOfWeek !== undefined) updateData.dayOfWeek = body.data.dayOfWeek;
+  if (body.data.name !== undefined) updateData.name = body.data.name ?? null;
+
   const updated = await request.server.prisma.planWorkout.update({
     where: { id: workoutId },
-    data: body.data,
+    data: updateData,
     select: { id: true, dayOfWeek: true, name: true, updatedAt: true },
   });
 

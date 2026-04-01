@@ -21,7 +21,7 @@ export const refreshHandler: RouteHandler = async (
 
   let payload: { sub: string };
   try {
-    payload = await request.refreshVerify<{ sub: string }>();
+    payload = await request.refreshVerify();
   } catch {
     unauthorized(reply, "Invalid or expired refresh token");
     return;

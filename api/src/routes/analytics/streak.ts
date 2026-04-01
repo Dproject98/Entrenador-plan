@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 
 function toDateStr(d: Date): string {
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split("T")[0]!;
 }
 
 function addDays(d: Date, n: number): Date {

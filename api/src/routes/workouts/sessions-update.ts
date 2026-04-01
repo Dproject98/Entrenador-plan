@@ -36,14 +36,16 @@ export const updateSessionHandler: RouteHandler = async (
     return;
   }
 
-  const { endedAt, ...rest } = body.data;
+  const { endedAt, name, notes } = body.data;
+
+  const updateData: { name?: string | null; notes?: string | null; endedAt?: Date | null } = {};
+  if (name !== undefined) updateData.name = name ?? null;
+  if (notes !== undefined) updateData.notes = notes ?? null;
+  if (endedAt !== undefined) updateData.endedAt = endedAt ? new Date(endedAt) : null;
 
   const session = await request.server.prisma.workoutSession.update({
     where: { id },
-    data: {
-      ...rest,
-      ...(endedAt !== undefined ? { endedAt: endedAt ? new Date(endedAt) : null } : {}),
-    },
+    data: updateData,
     select: {
       id: true,
       name: true,

@@ -19,6 +19,8 @@ import {
   useCreateWeek,
   useCreatePlanWorkout,
   useCreatePlannedExercise,
+  useDeletePlannedExercise,
+  useDeletePlanWorkout,
 } from "@/hooks/usePlans";
 import { useExercises } from "@/hooks/useExercises";
 import { colors, typography, radius, spacing } from "@/lib/theme";
@@ -111,6 +113,7 @@ export default function PlanDetailScreen() {
               <WeekSection
                 key={week.id}
                 week={week}
+                planId={planId}
                 onAddWorkout={() => setAddWorkoutTarget(week)}
                 onAddExercise={(workout) =>
                   setAddExerciseTarget({ week, workout })
@@ -153,14 +156,32 @@ export default function PlanDetailScreen() {
 
 function WeekSection({
   week,
+  planId,
   onAddWorkout,
   onAddExercise,
 }: {
   week: PlanWeek;
+  planId: string;
   onAddWorkout: () => void;
   onAddExercise: (workout: PlanWorkout) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const deleteWorkout = useDeletePlanWorkout(planId, week.id);
+
+  const handleDeleteWorkout = (workout: PlanWorkout) => {
+    Alert.alert(
+      "Eliminar entrenamiento",
+      `¿Eliminar el entrenamiento del ${DAY_LABELS[workout.dayOfWeek]}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: () => deleteWorkout.mutate(workout.id),
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.weekCard}>
@@ -190,7 +211,10 @@ function WeekSection({
                 <WorkoutItem
                   key={workout.id}
                   workout={workout}
+                  planId={planId}
+                  weekId={week.id}
                   onAddExercise={() => onAddExercise(workout)}
+                  onDelete={() => handleDeleteWorkout(workout)}
                 />
               ))
           )}
@@ -212,10 +236,16 @@ function WeekSection({
 
 function WorkoutItem({
   workout,
+  planId,
+  weekId,
   onAddExercise,
+  onDelete,
 }: {
   workout: PlanWorkout;
+  planId: string;
+  weekId: string;
   onAddExercise: () => void;
+  onDelete: () => void;
 }) {
   return (
     <View style={styles.workoutItem}>
@@ -226,13 +256,28 @@ function WorkoutItem({
         {workout.name && (
           <Text style={styles.workoutName}>{workout.name}</Text>
         )}
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity
+          onPress={onDelete}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.deleteWorkoutBtn}>✕</Text>
+        </TouchableOpacity>
       </View>
 
       {workout.plannedExercises.length > 0 ? (
         workout.plannedExercises
           .slice()
           .sort((a, b) => a.orderIndex - b.orderIndex)
-          .map((ex) => <ExerciseItem key={ex.id} exercise={ex} />)
+          .map((ex) => (
+            <ExerciseItem
+              key={ex.id}
+              exercise={ex}
+              planId={planId}
+              weekId={weekId}
+              workoutId={workout.id}
+            />
+          ))
       ) : (
         <Text style={styles.noExercises}>Sin ejercicios</Text>
       )}
@@ -250,7 +295,30 @@ function WorkoutItem({
 
 // ─── ExerciseItem ─────────────────────────────────────────────────────────────
 
-function ExerciseItem({ exercise }: { exercise: PlannedExercise }) {
+function ExerciseItem({
+  exercise,
+  planId,
+  weekId,
+  workoutId,
+}: {
+  exercise: PlannedExercise;
+  planId: string;
+  weekId: string;
+  workoutId: string;
+}) {
+  const deleteEx = useDeletePlannedExercise(planId, weekId, workoutId);
+
+  const handleDelete = () => {
+    Alert.alert("Eliminar ejercicio", `¿Eliminar ${exercise.exercise.name}?`, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: () => deleteEx.mutate(exercise.id),
+      },
+    ]);
+  };
+
   return (
     <View style={styles.exRow}>
       <View style={{ flex: 1 }}>
@@ -263,6 +331,13 @@ function ExerciseItem({ exercise }: { exercise: PlannedExercise }) {
       <Text style={styles.exMuscle}>
         {MUSCLE_LABELS[exercise.exercise.muscleGroup]}
       </Text>
+      <TouchableOpacity
+        onPress={handleDelete}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        disabled={deleteEx.isPending}
+      >
+        <Text style={styles.deleteExBtn}>{deleteEx.isPending ? "..." : "✕"}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -712,6 +787,12 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 
+  deleteWorkoutBtn: {
+    fontSize: 14,
+    color: colors.gray4,
+    fontWeight: typography.bold,
+  },
+
   addExBtn: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -739,6 +820,7 @@ const styles = StyleSheet.create({
   exName: { fontSize: typography.sm, fontWeight: typography.semibold, color: colors.textPrimary },
   exMeta: { fontSize: typography.xs, color: colors.textSecondary, marginTop: 1 },
   exMuscle: { fontSize: typography.xs, color: colors.textMuted },
+  deleteExBtn: { fontSize: 13, color: colors.gray4, fontWeight: typography.bold },
 
   addWeekBtn: {
     backgroundColor: colors.bgCard,

@@ -23,6 +23,7 @@ import {
   useCreateChallenge,
   useComments,
   useAddComment,
+  useFollow,
 } from "@/hooks/useSocial";
 import type { FeedPost, LeaderboardVolumeEntry, LeaderboardStreakEntry, Challenge, WorkoutComment } from "@/types/api.types";
 import { colors } from "@/lib/theme";
@@ -67,7 +68,16 @@ function FeedItem({
 }) {
   const userId = useAuthStore((s) => s.user?.id);
   const likeMutation = useLikeSession();
+  const followMutation = useFollow();
   const isOwn = item.user.id === userId;
+  const [followed, setFollowed] = useState(false);
+
+  const handleFollow = () => {
+    followMutation.mutate(
+      { userId: item.user.id, following: followed },
+      { onSuccess: () => setFollowed((v) => !v) }
+    );
+  };
 
   return (
     <View style={styles.card}>
@@ -79,6 +89,17 @@ function FeedItem({
           <Text style={styles.cardAuthor}>{item.user.name}</Text>
           <Text style={styles.cardMeta}>{timeAgo(item.startedAt)}</Text>
         </View>
+        {!isOwn && (
+          <TouchableOpacity
+            style={[styles.followBtn, followed && styles.followBtnActive]}
+            onPress={handleFollow}
+            disabled={followMutation.isPending}
+          >
+            <Text style={[styles.followBtnText, followed && styles.followBtnTextActive]}>
+              {followed ? "Siguiendo" : "+ Seguir"}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <Text style={styles.cardTitle}>{item.name ?? "Sesión de entrenamiento"}</Text>
@@ -1006,6 +1027,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+  followBtn: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  followBtnActive: {
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primaryLight,
+  },
+  followBtnText: { fontSize: 12, color: colors.primary, fontWeight: "600" },
+  followBtnTextActive: { color: colors.primaryDark },
+
   listContent: {
     paddingTop: 16,
     paddingBottom: 32,

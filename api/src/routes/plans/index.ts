@@ -11,6 +11,7 @@ import { createWorkoutHandler } from "./workouts-create.js";
 import { updateWorkoutHandler } from "./workouts-update.js";
 import { deleteWorkoutHandler } from "./workouts-delete.js";
 import { createPlannedExerciseHandler } from "./exercises-create.js";
+import { deletePlannedExerciseHandler } from "./exercises-delete.js";
 
 const auth = { preHandler: [authenticate] };
 
@@ -36,6 +37,11 @@ async function planRoutes(fastify: FastifyInstance): Promise<void> {
     "/plans/:id/weeks/:weekId/workouts/:workoutId/exercises",
     auth,
     createPlannedExerciseHandler
+  );
+  fastify.delete(
+    "/plans/:id/weeks/:weekId/workouts/:workoutId/exercises/:exerciseId",
+    auth,
+    deletePlannedExerciseHandler
   );
 }
 

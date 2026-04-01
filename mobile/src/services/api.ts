@@ -303,6 +303,9 @@ export const plansApi = {
     http.delete(`/plans/${planId}/weeks/${weekId}/workouts/${workoutId}`),
 
   // Planned exercises
+  deleteExercise: (planId: string, weekId: string, workoutId: string, exerciseId: string) =>
+    http.delete(`/plans/${planId}/weeks/${weekId}/workouts/${workoutId}/exercises/${exerciseId}`),
+
   createExercise: (
     planId: string,
     weekId: string,

@@ -88,6 +88,15 @@ export function useDeletePlanWorkout(planId: string, weekId: string) {
   });
 }
 
+export function useDeletePlannedExercise(planId: string, weekId: string, workoutId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (exerciseId: string) =>
+      plansApi.deleteExercise(planId, weekId, workoutId, exerciseId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: planKeys.detail(planId) }),
+  });
+}
+
 export function useCreatePlannedExercise(planId: string, weekId: string, workoutId: string) {
   const qc = useQueryClient();
   return useMutation({

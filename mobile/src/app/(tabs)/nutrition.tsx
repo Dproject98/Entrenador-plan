@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useMeals, useNutritionSummary, useCreateMeal } from "@/hooks/useNutrition";
 import { NutritionSkeleton } from "@/components/ui/Skeleton";
+import { MealDetailModal } from "@/components/ui/MealDetailModal";
 import { colors, typography, radius, spacing } from "@/lib/theme";
 import type { MealLog, MealType } from "@/types/api.types";
 
@@ -27,6 +28,8 @@ function toLocalDateString(d = new Date()) {
 
 export default function NutritionScreen() {
   const [date] = useState(toLocalDateString());
+  const [openMeal, setOpenMeal] = useState<MealLog | null>(null);
+
   const { data: meals, isLoading } = useMeals(date);
   const { data: summary } = useNutritionSummary(date);
   const createMeal = useCreateMeal();
@@ -38,11 +41,15 @@ export default function NutritionScreen() {
   const handleCreate = (mealType: MealType) => {
     createMeal.mutate(
       { date, mealType },
-      { onError: () => Alert.alert("Error", "No se pudo crear el registro") }
+      {
+        onSuccess: (newMeal) => setOpenMeal(newMeal),
+        onError: () => Alert.alert("Error", "No se pudo crear el registro"),
+      }
     );
   };
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.dateLabel}>
         {new Date(date + "T12:00:00").toLocaleDateString("es", {
@@ -90,12 +97,24 @@ export default function NutritionScreen() {
               mealType={mealType}
               meal={meal}
               onAdd={() => handleCreate(mealType)}
+              onOpen={() => meal && setOpenMeal(meal)}
               adding={adding}
             />
           );
         })}
       </View>
     </ScrollView>
+
+    {openMeal && (
+      <MealDetailModal
+        visible={!!openMeal}
+        mealId={openMeal.id}
+        mealType={openMeal.mealType}
+        date={date}
+        onClose={() => setOpenMeal(null)}
+      />
+    )}
+    </>
   );
 }
 
@@ -103,21 +122,27 @@ function MealSlot({
   mealType,
   meal,
   onAdd,
+  onOpen,
   adding,
 }: {
   mealType: MealType;
   meal?: MealLog;
   onAdd: () => void;
+  onOpen: () => void;
   adding: boolean;
 }) {
   return (
-    <View style={styles.mealCard}>
+    <TouchableOpacity
+      style={styles.mealCard}
+      onPress={meal ? onOpen : undefined}
+      activeOpacity={meal ? 0.75 : 1}
+    >
       <View style={styles.mealLeft}>
         <Text style={styles.mealIcon}>{MEAL_ICONS[mealType]}</Text>
         <View>
           <Text style={styles.mealTitle}>{MEAL_LABELS[mealType]}</Text>
           {meal ? (
-            <Text style={styles.mealRegistered}>Registrado</Text>
+            <Text style={styles.mealRegistered}>Toca para ver y añadir</Text>
           ) : (
             <Text style={styles.mealEmpty}>Sin alimentos</Text>
           )}
@@ -133,8 +158,8 @@ function MealSlot({
           <Text style={styles.addBtnText}>{adding ? "..." : "+ Agregar"}</Text>
         </TouchableOpacity>
       )}
-      {meal && <Text style={styles.checkmark}>✓</Text>}
-    </View>
+      {meal && <Text style={styles.chevron}>›</Text>}
+    </TouchableOpacity>
   );
 }
 
@@ -201,5 +226,5 @@ const styles = StyleSheet.create({
   },
   addBtnDisabled: { opacity: 0.5 },
   addBtnText: { fontSize: typography.sm, color: colors.primary, fontWeight: typography.semibold },
-  checkmark: { fontSize: 18, color: colors.success, fontWeight: typography.bold },
+  chevron: { fontSize: 22, color: colors.textMuted },
 });

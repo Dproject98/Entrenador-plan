@@ -8,9 +8,10 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useSession, useUpdateSession, useDeleteSession, useUpdateSet, useDeleteSet } from "@/hooks/useWorkouts";
+import { useSession, useUpdateSession, useDeleteSession, useUpdateSet, useDeleteSet, useAddSet } from "@/hooks/useWorkouts";
 import { SessionDetailSkeleton } from "@/components/ui/Skeleton";
 import { RestTimer } from "@/components/ui/RestTimer";
+import { ExercisePickerModal } from "@/components/ui/ExercisePickerModal";
 import { useTimerStore } from "@/store/timer.store";
 import { colors, typography, radius, spacing } from "@/lib/theme";
 import type { WorkoutSet } from "@/types/api.types";
@@ -18,12 +19,14 @@ import type { WorkoutSet } from "@/types/api.types";
 export default function SessionDetailScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const [showTimer, setShowTimer] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { data: session, isLoading } = useSession(sessionId);
   const updateSession = useUpdateSession(sessionId);
   const deleteSession = useDeleteSession();
   const updateSet = useUpdateSet(sessionId);
   const deleteSet = useDeleteSet(sessionId);
+  const addSet = useAddSet(sessionId);
   const startTimer = useTimerStore((s) => s.start);
 
   if (isLoading) return <SessionDetailSkeleton />;
@@ -80,7 +83,20 @@ export default function SessionDetailScreen() {
 
   const sections = Object.values(grouped);
 
+  const handleAddSet = async (params: {
+    exerciseId: string;
+    setNumber: number;
+    reps?: number;
+    weightKg?: number;
+    rpe?: number;
+  }) => {
+    await new Promise<void>((resolve, reject) => {
+      addSet.mutate(params, { onSuccess: () => resolve(), onError: reject });
+    });
+  };
+
   return (
+    <View style={{ flex: 1 }}>
     <SectionList
       style={styles.container}
       contentContainerStyle={styles.content}
@@ -125,9 +141,26 @@ export default function SessionDetailScreen() {
         />
       )}
       ListEmptyComponent={
-        <Text style={styles.noSets}>Sin series registradas todavía.</Text>
+        <Text style={styles.noSets}>Sin series registradas todavía.\nPulsa + para añadir ejercicios.</Text>
       }
     />
+
+    {/* FAB — add exercise */}
+    <TouchableOpacity
+      style={styles.fab}
+      onPress={() => setShowAddModal(true)}
+      activeOpacity={0.85}
+    >
+      <Text style={styles.fabText}>+</Text>
+    </TouchableOpacity>
+
+    <ExercisePickerModal
+      visible={showAddModal}
+      onClose={() => setShowAddModal(false)}
+      onAdd={handleAddSet}
+      sessionSets={session?.sets ?? []}
+    />
+    </View>
   );
 }
 
@@ -307,4 +340,27 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   timerToggleText: { fontSize: typography.sm, color: colors.primary, fontWeight: typography.semibold },
+
+  fab: {
+    position: "absolute",
+    bottom: 32,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  fabText: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: typography.normal,
+    lineHeight: 30,
+  },
 });

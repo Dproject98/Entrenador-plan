@@ -70,6 +70,10 @@ export default function RootLayout() {
               name="workout/log"
               options={{ headerShown: true, title: "Nueva sesión" }}
             />
+            <Stack.Screen
+              name="plans/[planId]"
+              options={{ headerShown: true, title: "Plan" }}
+            />
           </Stack>
         </View>
         {!accessToken && <Redirect href="/(auth)/login" />}

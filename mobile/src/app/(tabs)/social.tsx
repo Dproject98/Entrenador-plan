@@ -21,8 +21,10 @@ import {
   useLikeSession,
   useJoinChallenge,
   useCreateChallenge,
+  useComments,
+  useAddComment,
 } from "@/hooks/useSocial";
-import type { FeedPost, LeaderboardVolumeEntry, LeaderboardStreakEntry, Challenge } from "@/types/api.types";
+import type { FeedPost, LeaderboardVolumeEntry, LeaderboardStreakEntry, Challenge, WorkoutComment } from "@/types/api.types";
 import { colors } from "@/lib/theme";
 
 type SubTab = "feed" | "ranking" | "retos";
@@ -56,7 +58,13 @@ function challengeTypeLabel(type: string): string {
 
 // ─── Feed Item ────────────────────────────────────────────────────────────────
 
-function FeedItem({ item }: { item: FeedPost }) {
+function FeedItem({
+  item,
+  onOpenComments,
+}: {
+  item: FeedPost;
+  onOpenComments: (sessionId: string) => void;
+}) {
   const userId = useAuthStore((s) => s.user?.id);
   const likeMutation = useLikeSession();
   const isOwn = item.user.id === userId;
@@ -94,17 +102,105 @@ function FeedItem({ item }: { item: FeedPost }) {
           </Text>
         </TouchableOpacity>
 
-        <View style={styles.actionBtn}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => onOpenComments(item.id)}
+        >
           <Text style={styles.actionBtnText}>💬 {item.commentsCount}</Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
+  );
+}
+
+// ─── Comments Modal ───────────────────────────────────────────────────────────
+
+function CommentsModal({
+  sessionId,
+  onClose,
+}: {
+  sessionId: string | null;
+  onClose: () => void;
+}) {
+  const [text, setText] = React.useState("");
+  const { data: comments = [], isLoading } = useComments(sessionId ?? "");
+  const addComment = useAddComment(sessionId ?? "");
+
+  const handleSend = () => {
+    const body = text.trim();
+    if (!body || addComment.isPending) return;
+    addComment.mutate(body, {
+      onSuccess: () => setText(""),
+      onError: () => Alert.alert("Error", "No se pudo enviar el comentario"),
+    });
+  };
+
+  return (
+    <Modal
+      visible={!!sessionId}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={styles.commentsContainer}>
+        <View style={styles.commentsHeader}>
+          <Text style={styles.commentsTitle}>Comentarios</Text>
+          <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.commentsClose}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        {isLoading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
+        ) : comments.length === 0 ? (
+          <Text style={styles.noComments}>Sin comentarios todavía. ¡Sé el primero!</Text>
+        ) : (
+          <FlatList
+            data={comments}
+            keyExtractor={(c: WorkoutComment) => c.id}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: 16, gap: 12 }}
+            renderItem={({ item }: { item: WorkoutComment }) => (
+              <View style={styles.commentRow}>
+                <View style={styles.commentAvatar}>
+                  <Text style={styles.commentAvatarText}>{item.user.name[0].toUpperCase()}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.commentAuthor}>{item.user.name}</Text>
+                  <Text style={styles.commentBody}>{item.body}</Text>
+                </View>
+              </View>
+            )}
+          />
+        )}
+
+        <View style={styles.commentInput}>
+          <TextInput
+            style={styles.commentTextInput}
+            placeholder="Escribe un comentario..."
+            placeholderTextColor="#5C5C74"
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={500}
+          />
+          <TouchableOpacity
+            style={[styles.sendBtn, (!text.trim() || addComment.isPending) && styles.sendBtnDisabled]}
+            onPress={handleSend}
+            disabled={!text.trim() || addComment.isPending}
+          >
+            <Text style={styles.sendBtnText}>↑</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
 // ─── Feed Tab ─────────────────────────────────────────────────────────────────
 
 function FeedTab() {
+  const [commentSession, setCommentSession] = useState<string | null>(null);
   const { data, isLoading, refetch, isRefetching } = useFeed();
 
   if (isLoading) {
@@ -128,10 +224,13 @@ function FeedTab() {
   }
 
   return (
+    <>
     <FlatList
       data={data}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <FeedItem item={item} />}
+      renderItem={({ item }) => (
+        <FeedItem item={item} onOpenComments={setCommentSession} />
+      )}
       contentContainerStyle={styles.listContent}
       refreshControl={
         <RefreshControl
@@ -141,6 +240,11 @@ function FeedTab() {
         />
       }
     />
+    <CommentsModal
+      sessionId={commentSession}
+      onClose={() => setCommentSession(null)}
+    />
+    </>
   );
 }
 
@@ -906,4 +1010,73 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 32,
   },
+
+  // Comments modal
+  commentsContainer: { flex: 1, backgroundColor: colors.bg },
+  commentsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  commentsTitle: { fontSize: 17, fontWeight: "700", color: colors.textPrimary },
+  commentsClose: { fontSize: 17, color: colors.textSecondary, fontWeight: "700" },
+  noComments: {
+    textAlign: "center",
+    color: colors.textMuted,
+    fontSize: 13,
+    marginTop: 40,
+    fontStyle: "italic",
+  },
+  commentRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+  },
+  commentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  commentAvatarText: { color: colors.primaryDark, fontWeight: "700", fontSize: 13 },
+  commentAuthor: { fontSize: 13, fontWeight: "600", color: colors.textPrimary },
+  commentBody: { fontSize: 14, color: colors.textSecondary, marginTop: 2, lineHeight: 20 },
+  commentInput: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  commentTextInput: {
+    flex: 1,
+    backgroundColor: colors.bgInput,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.textPrimary,
+    fontSize: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    maxHeight: 100,
+  },
+  sendBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sendBtnDisabled: { opacity: 0.4 },
+  sendBtnText: { color: "#fff", fontSize: 18, fontWeight: "700", lineHeight: 20 },
 });

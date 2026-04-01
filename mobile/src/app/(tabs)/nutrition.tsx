@@ -26,9 +26,18 @@ function toLocalDateString(d = new Date()) {
   return d.toISOString().split("T")[0];
 }
 
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() + days);
+  return toLocalDateString(d);
+}
+
 export default function NutritionScreen() {
-  const [date] = useState(toLocalDateString());
+  const today = toLocalDateString();
+  const [date, setDate] = useState(today);
   const [openMeal, setOpenMeal] = useState<MealLog | null>(null);
+
+  const isToday = date === today;
 
   const { data: meals, isLoading } = useMeals(date);
   const { data: summary } = useNutritionSummary(date);
@@ -51,11 +60,31 @@ export default function NutritionScreen() {
   return (
     <>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.dateLabel}>
-        {new Date(date + "T12:00:00").toLocaleDateString("es", {
-          weekday: "long", day: "numeric", month: "long",
-        })}
-      </Text>
+      {/* Date navigation */}
+      <View style={styles.dateNav}>
+        <TouchableOpacity style={styles.dateNavBtn} onPress={() => setDate(addDays(date, -1))}>
+          <Text style={styles.dateNavArrow}>‹</Text>
+        </TouchableOpacity>
+        <View style={styles.dateNavCenter}>
+          <Text style={styles.dateLabel}>
+            {new Date(date + "T12:00:00").toLocaleDateString("es", {
+              weekday: "long", day: "numeric", month: "long",
+            })}
+          </Text>
+          {!isToday && (
+            <TouchableOpacity onPress={() => setDate(today)}>
+              <Text style={styles.todayBtn}>Hoy</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          style={[styles.dateNavBtn, isToday && styles.dateNavBtnDisabled]}
+          onPress={() => !isToday && setDate(addDays(date, 1))}
+          disabled={isToday}
+        >
+          <Text style={[styles.dateNavArrow, isToday && styles.dateNavArrowDisabled]}>›</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Daily totals */}
       {summary && (
@@ -167,12 +196,38 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing[4], gap: spacing[3] },
 
+  dateNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing[1],
+  },
+  dateNavBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: radius.sm,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  dateNavBtnDisabled: { opacity: 0.35 },
+  dateNavArrow: { fontSize: 22, color: colors.primary, fontWeight: typography.bold },
+  dateNavArrowDisabled: { color: colors.textMuted },
+  dateNavCenter: { flex: 1, alignItems: "center", gap: 2 },
   dateLabel: {
     fontSize: typography.sm,
     fontWeight: typography.semibold,
     color: colors.textSecondary,
     textTransform: "capitalize",
-    marginBottom: spacing[1],
+    textAlign: "center",
+  },
+  todayBtn: {
+    fontSize: typography.xs,
+    color: colors.primary,
+    fontWeight: typography.semibold,
+    textDecorationLine: "underline",
   },
 
   summaryCard: {

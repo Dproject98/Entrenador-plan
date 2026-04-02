@@ -43,6 +43,7 @@ interface AddSetParams {
   reps?: number;
   weightKg?: number;
   rpe?: number;
+  notes?: string;
 }
 
 interface Props {
@@ -62,6 +63,7 @@ export function ExercisePickerModal({ visible, onClose, onAdd, sessionSets }: Pr
   const [reps, setReps] = useState("");
   const [weight, setWeight] = useState("");
   const [rpe, setRpe] = useState("");
+  const [notes, setNotes] = useState("");
   const [adding, setAdding] = useState(false);
   const [addedCount, setAddedCount] = useState(0);
 
@@ -81,6 +83,7 @@ export function ExercisePickerModal({ visible, onClose, onAdd, sessionSets }: Pr
     setReps("");
     setWeight("");
     setRpe("");
+    setNotes("");
     setAddedCount(0);
     setStep("log");
   };
@@ -95,10 +98,12 @@ export function ExercisePickerModal({ visible, onClose, onAdd, sessionSets }: Pr
         reps: reps ? parseInt(reps, 10) : undefined,
         weightKg: weight ? parseFloat(weight) : undefined,
         rpe: rpe ? parseInt(rpe, 10) : undefined,
+        notes: notes.trim() || undefined,
       });
       setReps("");
       setWeight("");
       setRpe("");
+      setNotes("");
       setAddedCount((c) => c + 1);
     } finally {
       setAdding(false);
@@ -113,6 +118,7 @@ export function ExercisePickerModal({ visible, onClose, onAdd, sessionSets }: Pr
     setReps("");
     setWeight("");
     setRpe("");
+    setNotes("");
     setAddedCount(0);
     onClose();
   };
@@ -286,6 +292,15 @@ export function ExercisePickerModal({ visible, onClose, onAdd, sessionSets }: Pr
               </View>
             </View>
 
+            <TextInput
+              style={styles.notesInput}
+              placeholder="Notas (opcional)"
+              placeholderTextColor={colors.textMuted}
+              value={notes}
+              onChangeText={setNotes}
+              maxLength={200}
+            />
+
             <TouchableOpacity
               style={[styles.addBtn, adding && styles.btnDisabled]}
               onPress={handleAdd}
@@ -458,6 +473,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[2],
+  },
+
+  notesInput: {
+    backgroundColor: colors.bgInput,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.textPrimary,
+    fontSize: typography.sm,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2] + 2,
   },
 
   addBtn: {

@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useMealDetail, useFoods, useAddEntry, useDeleteEntry, useCreateFood } from "@/hooks/useNutrition";
+import { useMealDetail, useFoods, useAddEntry, useUpdateEntry, useDeleteEntry, useCreateFood } from "@/hooks/useNutrition";
 import { colors, typography, radius, spacing } from "@/lib/theme";
 import type { MealType, Food, MealEntry } from "@/types/api.types";
 
@@ -43,11 +43,13 @@ export function MealDetailModal({ visible, mealId, mealType, date, onClose }: Pr
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("");
   const [showCreateFood, setShowCreateFood] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<{ id: string; qty: string } | null>(null);
 
   const { data: meal, isLoading } = useMealDetail(mealId);
   const { data: foodResults, isLoading: searchLoading } = useFoods(search);
   const addEntry = useAddEntry(mealId, date);
   const deleteEntry = useDeleteEntry(mealId, date);
+  const updateEntry = useUpdateEntry(mealId, date);
   const createFood = useCreateFood();
 
   const handleSelectFood = (food: Food) => {
@@ -71,6 +73,16 @@ export function MealDetailModal({ visible, mealId, mealType, date, onClose }: Pr
         },
         onError: () => Alert.alert("Error", "No se pudo añadir el alimento"),
       }
+    );
+  };
+
+  const handleUpdateEntry = (entry: MealEntry) => {
+    if (!editingEntry) return;
+    const quantityG = parseFloat(editingEntry.qty);
+    if (isNaN(quantityG) || quantityG <= 0) return;
+    updateEntry.mutate(
+      { entryId: entry.id, quantityG },
+      { onSuccess: () => setEditingEntry(null) }
     );
   };
 
@@ -142,20 +154,55 @@ export function MealDetailModal({ visible, mealId, mealType, date, onClose }: Pr
             scrollEnabled={false}
             renderItem={({ item }) => {
               const m = macros(item.food, item.quantityG);
+              const isEditing = editingEntry?.id === item.id;
               return (
                 <View style={styles.entryRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.entryName}>{item.food.name}</Text>
-                    <Text style={styles.entryMeta}>
-                      {item.quantityG}g · {m.cal} kcal · P:{m.prot}g C:{m.carb}g G:{m.fat}g
-                    </Text>
+                    {isEditing ? (
+                      <View style={styles.editQtyRow}>
+                        <TextInput
+                          style={styles.editQtyInput}
+                          value={editingEntry!.qty}
+                          onChangeText={(v) => setEditingEntry({ id: item.id, qty: v })}
+                          keyboardType="decimal-pad"
+                          autoFocus
+                          selectTextOnFocus
+                        />
+                        <Text style={styles.quantityUnit}>g</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity onPress={() => setEditingEntry({ id: item.id, qty: String(item.quantityG) })}>
+                        <Text style={styles.entryMeta}>
+                          {item.quantityG}g · {m.cal} kcal · P:{m.prot}g C:{m.carb}g G:{m.fat}g ✎
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteEntry(item)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={styles.deleteEntryBtn}>✕</Text>
-                  </TouchableOpacity>
+                  {isEditing ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => handleUpdateEntry(item)}
+                        disabled={updateEntry.isPending}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={styles.saveEntryBtn}>✓</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setEditingEntry(null)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={styles.deleteEntryBtn}>✕</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => handleDeleteEntry(item)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={styles.deleteEntryBtn}>✕</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               );
             }}
@@ -479,6 +526,17 @@ const styles = StyleSheet.create({
   },
   entryMeta: { fontSize: typography.xs, color: colors.textSecondary, marginTop: 1 },
   deleteEntryBtn: { fontSize: 14, color: colors.gray4, fontWeight: typography.bold },
+  saveEntryBtn: { fontSize: 16, color: colors.success, fontWeight: typography.bold },
+  editQtyRow: { flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: 2 },
+  editQtyInput: {
+    color: colors.textPrimary,
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary,
+    minWidth: 48,
+    paddingVertical: 1,
+  },
   separator: { height: 1, backgroundColor: colors.border, marginHorizontal: spacing[4] },
   emptyEntries: {
     textAlign: "center",

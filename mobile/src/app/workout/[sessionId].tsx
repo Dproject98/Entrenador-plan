@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   View,
   Text,
+  TextInput,
   SectionList,
   TouchableOpacity,
   StyleSheet,
@@ -89,6 +90,7 @@ export default function SessionDetailScreen() {
     reps?: number;
     weightKg?: number;
     rpe?: number;
+    notes?: string;
   }) => {
     await new Promise<void>((resolve, reject) => {
       addSet.mutate(params, { onSuccess: () => resolve(), onError: reject });
@@ -111,6 +113,12 @@ export default function SessionDetailScreen() {
             notes={session.notes}
             onFinish={handleFinish}
             onDelete={handleDelete}
+            onSave={(name, notes) =>
+              updateSession.mutate({
+                name: name || undefined,
+                notes: notes || null,
+              })
+            }
             finishing={updateSession.isPending}
             deleting={deleteSession.isPending}
           />
@@ -171,6 +179,7 @@ function SessionHeader({
   notes,
   onFinish,
   onDelete,
+  onSave,
   finishing,
   deleting,
 }: {
@@ -180,24 +189,78 @@ function SessionHeader({
   notes?: string | null;
   onFinish: () => void;
   onDelete: () => void;
+  onSave: (name: string, notes: string) => void;
   finishing: boolean;
   deleting: boolean;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(name ?? "");
+  const [editNotes, setEditNotes] = useState(notes ?? "");
+
+  const handleSave = () => {
+    onSave(editName.trim(), editNotes.trim());
+    setEditing(false);
+  };
+
+  const handleStartEdit = () => {
+    setEditName(name ?? "");
+    setEditNotes(notes ?? "");
+    setEditing(true);
+  };
+
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>{name ?? "Sesión"}</Text>
-      <Text style={styles.date}>
-        {new Date(startedAt).toLocaleDateString("es", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}
-      </Text>
-      {notes ? <Text style={styles.notes}>{notes}</Text> : null}
+      {editing ? (
+        <>
+          <TextInput
+            style={styles.editTitleInput}
+            value={editName}
+            onChangeText={setEditName}
+            placeholder="Nombre de la sesión"
+            placeholderTextColor={colors.textMuted}
+            autoFocus
+            maxLength={100}
+          />
+          <TextInput
+            style={styles.editNotesInput}
+            value={editNotes}
+            onChangeText={setEditNotes}
+            placeholder="Notas (opcional)"
+            placeholderTextColor={colors.textMuted}
+            multiline
+            maxLength={500}
+          />
+          <View style={styles.editActions}>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
+              <Text style={styles.saveBtnText}>Guardar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelEditBtn} onPress={() => setEditing(false)} activeOpacity={0.7}>
+              <Text style={styles.cancelEditBtnText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        <>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{name ?? "Sesión"}</Text>
+            <TouchableOpacity onPress={handleStartEdit} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.editBtn}>✏️</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.date}>
+            {new Date(startedAt).toLocaleDateString("es", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </Text>
+          {notes ? <Text style={styles.notes}>{notes}</Text> : null}
+        </>
+      )}
 
       <View style={styles.headerActions}>
-        {!endedAt && (
+        {!endedAt && !editing && (
           <TouchableOpacity
             style={[styles.finishBtn, finishing && styles.btnDisabled]}
             onPress={onFinish}
@@ -212,14 +275,16 @@ function SessionHeader({
             <Text style={styles.doneBadgeText}>✓ Completada</Text>
           </View>
         )}
-        <TouchableOpacity
-          style={[styles.deleteBtn, deleting && styles.btnDisabled]}
-          onPress={onDelete}
-          disabled={deleting}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.deleteBtnText}>Eliminar</Text>
-        </TouchableOpacity>
+        {!editing && (
+          <TouchableOpacity
+            style={[styles.deleteBtn, deleting && styles.btnDisabled]}
+            onPress={onDelete}
+            disabled={deleting}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.deleteBtnText}>Eliminar</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -267,9 +332,50 @@ const styles = StyleSheet.create({
   emptyText: { color: colors.textMuted, fontSize: typography.md },
 
   header: { marginBottom: spacing[2], gap: 4 },
-  title: { fontSize: typography["2xl"], fontWeight: typography.bold, color: colors.textPrimary },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+  title: { fontSize: typography["2xl"], fontWeight: typography.bold, color: colors.textPrimary, flex: 1 },
+  editBtn: { fontSize: 16 },
   date: { fontSize: typography.sm, color: colors.textSecondary, textTransform: "capitalize" },
   notes: { fontSize: typography.sm, color: colors.textSecondary, fontStyle: "italic", marginTop: 4 },
+  editTitleInput: {
+    backgroundColor: colors.bgInput,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.borderFocus,
+    color: colors.textPrimary,
+    fontSize: typography.xl,
+    fontWeight: typography.bold,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+  },
+  editNotesInput: {
+    backgroundColor: colors.bgInput,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.textPrimary,
+    fontSize: typography.sm,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    minHeight: 60,
+    textAlignVertical: "top",
+  },
+  editActions: { flexDirection: "row", gap: spacing[2] },
+  saveBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+  },
+  saveBtnText: { color: "#fff", fontWeight: typography.semibold, fontSize: typography.sm },
+  cancelEditBtn: {
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+  },
+  cancelEditBtnText: { color: colors.textSecondary, fontSize: typography.sm },
 
   headerActions: { flexDirection: "row", gap: spacing[2], marginTop: spacing[3], alignItems: "center" },
   finishBtn: {
